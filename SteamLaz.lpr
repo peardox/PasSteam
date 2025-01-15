@@ -10,7 +10,9 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lazmain;
+  Forms, lazmain, CastleDynLib, CastleInternalSteamApi, CastleSteam,
+  CastleUtils, castleapplicationproperties, castlefilesutils, CastleLog,
+  castlestringutils;
 
 {$R *.res}
 

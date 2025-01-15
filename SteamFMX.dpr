@@ -12,7 +12,8 @@ uses
   castlelog in 'override\castlelog.pas',
   castlefilesutils in 'override\castlefilesutils.pas',
   castlestringutils in 'override\castlestringutils.pas',
-  castleapplicationproperties in 'override\castleapplicationproperties.pas';
+  castleapplicationproperties in 'override\castleapplicationproperties.pas',
+  jprse.mediatimer in 'override\jprse.mediatimer.pas';
 
 {$R *.res}
 

@@ -1,5 +1,5 @@
-rem copy c:\Components\castle-engine\src\services\steam\castlesteam.pas .
-rem copy c:\Components\castle-engine\src\services\steam\castleinternalsteamapi.pas .
+copy c:\Components\castle-engine\src\services\steam\castlesteam.pas .
+copy c:\Components\castle-engine\src\services\steam\castleinternalsteamapi.pas .
 copy c:\Components\castle-engine\src\base\castledynlib.pas .
 rem copy c:\Components\castle-engine\src\base\castlestringutils.pas .
 copy c:\Components\castle-engine\src\base\castleutils.pas .

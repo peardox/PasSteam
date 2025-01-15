@@ -19,8 +19,6 @@ object Form1: TForm1
     Height = 15
     Align = alBottom
     Caption = 'Label1'
-    ExplicitLeft = 32
-    ExplicitTop = 400
     ExplicitWidth = 34
   end
 end

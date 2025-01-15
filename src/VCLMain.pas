@@ -15,10 +15,8 @@ type
     Label1: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
-    procedure AppUpdate(Sender: TObject);
   private
     { Private declarations }
-    SteamUpdate: TTimer;
   public
     { Public declarations }
   end;
@@ -37,10 +35,7 @@ implementation
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   ApplicationProperties();
-  SteamUpdate := TTimer.Create(Self);
-  SteamUpdate.OnTimer := AppUpdate;
-  SteamUpdate.Interval := 17;
-  SteamUpdate.Enabled := True;
+  ApplicationProperties.Interval := 17;
 
   Steam := TCastleSteam.Create(AppId);
   Steam.OnUserStatsReceived := UserStatsReceived;
@@ -48,12 +43,6 @@ begin
     Label1.Caption := 'Steam loaded'
   else
     Label1.Caption := 'Steam not loaded';
-end;
-
-procedure TForm1.AppUpdate(Sender: TObject);
-begin
-  if Assigned(Steam) then
-    Steam.DoUpdate(Self);
 end;
 
 procedure TForm1.UserStatsReceived(Sender: TObject);

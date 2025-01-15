@@ -41,6 +41,43 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
+      <Unit>
+        <Filename Value="override\castleapplicationproperties.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="override\castlefilesutils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="override\castlelog.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleLog"/>
+      </Unit>
+      <Unit>
+        <Filename Value="override\castlestringutils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castledynlib.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleDynLib"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castleinternalsteamapi.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleInternalSteamApi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castlesteam.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleSteam"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castleutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleUtils"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -51,7 +88,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="src"/>
+      <OtherUnitFiles Value="src;steam;override"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

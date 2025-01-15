@@ -140,9 +140,6 @@ type
       @seealso ClearAchievement }
     procedure ClearAllAchievements;
 
-    { Public access to Update for non-CGE apps }
-    procedure DoUpdate(Sender: TObject);
-
     { Show Steam overlay "progress towards achievement" e.g. "Wins 33/100".
 
       Don't use this when achievement is already achieved.
@@ -271,6 +268,7 @@ begin
   InitializeSteamLibrary;
   CheckEnabledAndRestart;
   InitialSteamCalls;
+
   ApplicationProperties.OnUpdate.Add({$ifdef FPC}@{$endif} Update);
 end;
 
@@ -537,11 +535,6 @@ begin
   if not Enabled then
     Exit(false);
   Result := SteamAPI_ISteamApps_BIsDlcInstalled(SteamAPI_SteamApps(), DlcAppID);
-end;
-
-procedure TCastleSteam.DoUpdate(Sender: TObject);
-begin
-  Update(Sender);
 end;
 
 function TCastleSteam.Language: String;
