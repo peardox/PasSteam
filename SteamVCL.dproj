@@ -136,7 +136,7 @@
         <DCCReference Include="steam\castlesteam.pas"/>
         <DCCReference Include="steam\castleutils.pas"/>
         <DCCReference Include="steam\ctypes.pas"/>
-        <DCCReference Include="override\jprse.mediatimer.pas"/>
+        <DCCReference Include="component\SteamApp.vcl.pas"/>
         <None Include="override\__history\castleapplicationproperties.pas.~1~"/>
         <None Include="steam\castleconf.inc"/>
         <None Include="steam\castleutils_delphi_compatibility.inc"/>

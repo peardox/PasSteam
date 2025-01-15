@@ -2,7 +2,7 @@ unit castleapplicationproperties;
 
 interface
 
-uses SysUtils, Generics.Collections, Contnrs, Classes, JPRSE.MediaTimer;
+uses SysUtils, Generics.Collections, Contnrs, Classes;
 
 type
   TNotifyEventList = class({$ifdef FPC}specialize{$endif} TList<TNotifyEvent>)
@@ -44,19 +44,13 @@ type
     FOnUpdate: TNotifyEventList;
     FOnInitializeDebug: TProcedureList;
     FPendingToFree: TComponentList;
-    FAppTimer: TMediaTimer;
-    FUpdateCount: Cardinal;
-    FInterval: Cardinal;
-    procedure AppUpdate(Sender: TObject);
     procedure _Update;
     procedure DoPendingFree;
-    procedure SetInterval(const AValue: Cardinal);
   public
     constructor Create;
     destructor Destroy; override;
+    procedure DoUpdate(Sender: TObject);
     property OnUpdate: TNotifyEventList read FOnUpdate;
-    property UpdateCount: Cardinal Read FUpdateCount;
-    property Interval: Cardinal Read FInterval Write SetInterval;
   end;
 
 var
@@ -76,7 +70,7 @@ begin
 end;
 
 
-procedure TCastleApplicationProperties.AppUpdate(Sender: TObject);
+procedure TCastleApplicationProperties.DoUpdate(Sender: TObject);
 begin
   _Update;
 end;
@@ -85,11 +79,6 @@ constructor TCastleApplicationProperties.Create;
 begin
   FOnUpdate := TNotifyEventList.Create;
   FOnInitializeDebug := TProcedureList.Create;
-  FUpdateCount := 0;
-  FAppTimer := TMediaTimer.Create(Nil);
-  FAppTimer.OnMediaTimer := Nil;
-  FAppTimer.Interval := 0;
-  FAppTimer.Enabled := False;
 end;
 
 destructor TCastleApplicationProperties.Destroy;
@@ -115,24 +104,6 @@ begin
     for I := FPendingToFree.Count - 1 downto 0 do
       if I < FPendingToFree.Count then
         FPendingToFree[I].Free; // this will remove it from children, and from FPendingToFree
-end;
-
-procedure TCastleApplicationProperties.SetInterval(const AValue: Cardinal);
-begin
-  if(AValue > 0) then
-    begin
-      FInterval := AValue;
-      FAppTimer.OnMediaTimer := AppUpdate;
-      FAppTimer.Interval := FInterval;
-      FAppTimer.Enabled := True;
-    end
-  else
-    begin
-      FInterval := AValue;
-      FAppTimer.OnMediaTimer := Nil;
-      FAppTimer.Interval := FInterval;
-      FAppTimer.Enabled := False;
-    end;
 end;
 
 { TNotifyEventList  ------------------------------------------------------ }

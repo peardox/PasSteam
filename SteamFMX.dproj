@@ -319,7 +319,7 @@
         <DCCReference Include="override\castlefilesutils.pas"/>
         <DCCReference Include="override\castlestringutils.pas"/>
         <DCCReference Include="override\castleapplicationproperties.pas"/>
-        <DCCReference Include="override\jprse.mediatimer.pas"/>
+        <DCCReference Include="component\SteamApp.fmx.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

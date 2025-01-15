@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
-  CastleSteam, CastleApplicationProperties;
+  SteamApp.vcl;
 
 type
   TAchievementLine = Class(TPanel)
@@ -23,7 +23,7 @@ type
 
 var
   Form1: TForm1;
-  Steam: TCastleSteam;
+  Steam: TSteamApp;
 
 const
   AppId: Integer = 480;
@@ -34,11 +34,10 @@ implementation
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  ApplicationProperties();
-  ApplicationProperties.Interval := 17;
-
-  Steam := TCastleSteam.Create(AppId);
+  Steam := TSteamApp.Create(AppId);
+  Steam.Interval := 17;
   Steam.OnUserStatsReceived := UserStatsReceived;
+  Steam.OnAppUpdate := UserStatsReceived;
   if Steam.Enabled then
     Label1.Caption := 'Steam loaded'
   else
@@ -52,7 +51,7 @@ begin
   if Assigned(Steam) then
     begin
       AchievementCount := Steam.Achievements.Count;
-      Label1.Caption := 'Steam - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available';
+      Label1.Caption := 'Steam - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available - Update : ' + IntToStr(Steam.UpdateCount);
     end;
 end;
 

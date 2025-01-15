@@ -12,7 +12,7 @@ uses
   castlesteam in 'steam\castlesteam.pas',
   castleutils in 'steam\castleutils.pas',
   ctypes in 'steam\ctypes.pas',
-  jprse.mediatimer in 'override\jprse.mediatimer.pas';
+  SteamApp.vcl in 'component\SteamApp.vcl.pas';
 
 {$R *.res}
 

@@ -13,7 +13,7 @@ uses
   castlefilesutils in 'override\castlefilesutils.pas',
   castlestringutils in 'override\castlestringutils.pas',
   castleapplicationproperties in 'override\castleapplicationproperties.pas',
-  jprse.mediatimer in 'override\jprse.mediatimer.pas';
+  SteamApp.fmx in 'component\SteamApp.fmx.pas';
 
 {$R *.res}
 
