@@ -37,6 +37,8 @@ Android/
 Android64/
 iOSDevice64/
 Linux64/
+backup/
+lib/
 
 # Delphi compiler-generated binaries (safe to delete)
 *.exe
