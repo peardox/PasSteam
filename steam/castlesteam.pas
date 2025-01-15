@@ -140,6 +140,9 @@ type
       @seealso ClearAchievement }
     procedure ClearAllAchievements;
 
+    { Public access to Update for non-CGE apps }
+    procedure DoUpdate(Sender: TObject);
+
     { Show Steam overlay "progress towards achievement" e.g. "Wins 33/100".
 
       Don't use this when achievement is already achieved.
@@ -181,7 +184,7 @@ type
 implementation
 
 uses SysUtils, CTypes,
-  CastleLog, CastleUtils{$if defined(CASTLE_APPLICATION)}, CastleApplicationProperties{$endif};
+  CastleLog, CastleUtils, CastleApplicationProperties;
 
 procedure WarningHook(nSeverity: Integer; pchDebugText: PAnsiChar); Cdecl;
 var
@@ -268,9 +271,7 @@ begin
   InitializeSteamLibrary;
   CheckEnabledAndRestart;
   InitialSteamCalls;
-  {$if defined(CASTLE_APPLICATION)}
   ApplicationProperties.OnUpdate.Add({$ifdef FPC}@{$endif} Update);
-  {$endif}
 end;
 
 destructor TCastleSteam.Destroy;
@@ -278,10 +279,8 @@ begin
   FreeAndNil(FAchievements);
   if Enabled then
     SteamAPI_Shutdown();
-  {$if defined(CASTLE_APPLICATION)}
   if ApplicationProperties(false) <> nil then
     ApplicationProperties(false).OnUpdate.Remove({$ifdef FPC}@{$endif} Update);
-  {$endif}
   inherited;
 end;
 
@@ -538,6 +537,11 @@ begin
   if not Enabled then
     Exit(false);
   Result := SteamAPI_ISteamApps_BIsDlcInstalled(SteamAPI_SteamApps(), DlcAppID);
+end;
+
+procedure TCastleSteam.DoUpdate(Sender: TObject);
+begin
+  Update(Sender);
 end;
 
 function TCastleSteam.Language: String;

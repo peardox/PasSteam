@@ -6,14 +6,21 @@ uses SysUtils, Generics.Collections, Contnrs, Classes;
 
 type
   TNotifyEventList = class({$ifdef FPC}specialize{$endif} TList<TNotifyEvent>)
+  public
+    { Call all (assigned) Items, from first to last. }
+    procedure ExecuteAll(Sender: TObject);
+
+    { Call all (assigned) Items, from first to last. }
+    procedure ExecuteForward(Sender: TObject);
+
+    { Call all (assigned) Items, from last to first. }
+    procedure ExecuteBackward(Sender: TObject);
   end;
 
   TProcedureList = class({$ifdef FPC}specialize{$endif} TList<TProcedure>)
-  end;
-
-  TGLContextEvent = procedure;
-
-  TGLContextEventList = class({$ifdef FPC}specialize{$endif} TList<TGLContextEvent>)
+  public
+    { Call all (assigned) Items, from first to last. }
+    procedure ExecuteAll;
   end;
 
   TWarningEvent = procedure (const Category, Message: String) of object;
@@ -34,61 +41,35 @@ type
     or Lazarus (LCL) TApplication (in case you use CastleControl). }
   TCastleApplicationProperties = class
   private
-    FIsGLContextOpen, FFileAccessSafe: boolean;
-    FOnGLContextEarlyOpen, FOnGLContextOpen, FOnGLContextClose: TGLContextEventList;
-    FOnUpdate, FOnInitializeJavaActivity,
-      FOnGLContextOpenObject, FOnGLContextCloseObject,
-      FOnPause, FOnResume: TNotifyEventList;
-    FOnWarning: TWarningEventList;
-    FOnLog: TLogEventList;
+    FOnUpdate: TNotifyEventList;
     FOnInitializeDebug: TProcedureList;
-    FVersion: String;
-    FTouchDevice: boolean;
-    FLimitFPS: Single;
-    FShowUserInterfaceToQuit: Boolean;
-    FCaption: String;
-    // Maybe we will expose them as public read-only properties in the future.
-    FInitializedDebug: Boolean;
-    FInitializedRelease: Boolean;
-    FPendingToFree: TComponentList;
-    function GetApplicationName: String;
-    procedure SetApplicationName(const Value: String);
-    procedure DoPendingFree;
   public
-    const
-      DefaultLimitFPS = 120.0;
-
-      { Some platforms do not support Application.ProcessMessage, which means you
-        cannot just write a function like MessageYesNo that waits until user clicks
-        something.
-        You *have* to implement modal boxes then using views,
-        e.g. using CastleDialogViews or your own TCastleView descendants. }
-      PlatformAllowsModalRoutines = {$if defined(CASTLE_IOS) or defined(CASTLE_NINTENDO_SWITCH)} false {$else} true {$endif};
-
     constructor Create;
     destructor Destroy; override;
-
-    { Application short name.
-      Used e.g. by @link(InitializeLog) to name the log file.
-
-      When compiled with FPC, this returns and sets the same thing
-      as standard SysUtils.ApplicationName.
-      When setting this, we automatically set SysUtils.OnGetApplicationName. }
-    property ApplicationName: String read GetApplicationName write SetApplicationName;
+    property OnUpdate: TNotifyEventList read FOnUpdate;
   end;
 
 var
   FApplicationProperties: TCastleApplicationProperties;
 
-
+function ApplicationProperties(const CreateIfNotExisting: boolean = true): TCastleApplicationProperties;
 
 implementation
 
 { TCastleApplicationProperties }
 
+function ApplicationProperties(const CreateIfNotExisting: boolean): TCastleApplicationProperties;
+begin
+  if (FApplicationProperties = nil) and CreateIfNotExisting then
+    FApplicationProperties := TCastleApplicationProperties.Create;
+  Result := FApplicationProperties;
+end;
+
+
 constructor TCastleApplicationProperties.Create;
 begin
-
+  FOnUpdate := TNotifyEventList.Create;
+  FOnInitializeDebug := TProcedureList.Create;
 end;
 
 destructor TCastleApplicationProperties.Destroy;
@@ -97,19 +78,66 @@ begin
   inherited;
 end;
 
-procedure TCastleApplicationProperties.DoPendingFree;
-begin
+{ TNotifyEventList  ------------------------------------------------------ }
 
+procedure TNotifyEventList.ExecuteAll(Sender: TObject);
+var
+  I: Integer;
+begin
+  for I := 0 to Count - 1 do
+
+    { TODO: The test "I < Count" is a quick fix for the problem that list
+      may be modified during iteration.
+      E.g. network/remote_logging/gameloghandler.pas in HttpPostFinish
+      sets FreeSender, which means that Application.OnUpdate list
+      is modified while we iterate over it.
+
+      We should introduce a reliable way to handle this, but for now the test
+      at least prevents a crash in this case. }
+
+    if (I < Count) and Assigned(Items[I]) then
+      Items[I](Sender);
 end;
 
-function TCastleApplicationProperties.GetApplicationName: String;
+procedure TNotifyEventList.ExecuteForward(Sender: TObject);
 begin
-
+  ExecuteAll(Sender);
 end;
 
-procedure TCastleApplicationProperties.SetApplicationName(const Value: String);
+procedure TNotifyEventList.ExecuteBackward(Sender: TObject);
+var
+  I: Integer;
 begin
+  for I := Count - 1 downto 0 do
 
+    { TODO: The test "I < Count" is a quick fix for the problem that when
+      TCastleApplicationProperties._GLContextClose calls
+      FOnGLContextCloseObject.ExecuteBackward(Self),
+      some "on close" callbacks modify the FOnGLContextCloseObject list.
+
+      We should introduce a reliable way to handle this, but for now the test
+      at least prevents a crash in this case. }
+
+    if (I < Count) and Assigned(Items[I]) then
+      Items[I](Sender);
 end;
+
+{ TProcedureList ------------------------------------------------------ }
+
+procedure TProcedureList.ExecuteAll;
+var
+  I: Integer;
+begin
+  for I := 0 to Count - 1 do
+    { See TNotifyEventList.ExecuteAll for explanation why the "I < Count"
+      adds a little safety here. }
+    if (I < Count) and Assigned(Items[I]) then
+      Items[I]();
+end;
+
+
+initialization
+finalization
+  FreeAndNil(ApplicationProperties);
 
 end.

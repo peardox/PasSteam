@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{0D251DE8-5EB1-4657-A8D2-C899C87AB84C}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="SteamFMX.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="SteamVCL.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="SteamFMX">
+        <MSBuild Projects="SteamFMX.dproj"/>
+    </Target>
+    <Target Name="SteamFMX:Clean">
+        <MSBuild Projects="SteamFMX.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SteamFMX:Make">
+        <MSBuild Projects="SteamFMX.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="SteamVCL">
+        <MSBuild Projects="SteamVCL.dproj"/>
+    </Target>
+    <Target Name="SteamVCL:Clean">
+        <MSBuild Projects="SteamVCL.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SteamVCL:Make">
+        <MSBuild Projects="SteamVCL.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="SteamFMX;SteamVCL"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="SteamFMX:Clean;SteamVCL:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="SteamFMX:Make;SteamVCL:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

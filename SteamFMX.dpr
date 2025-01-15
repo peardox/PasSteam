@@ -1,9 +1,9 @@
-program Steam;
+program SteamFMX;
 
 uses
   System.StartUpCopy,
   FMX.Forms,
-  Unit1 in 'src\Unit1.pas' {Form1},
+  FMXMain in 'src\FMXMain.pas' {Form1},
   castlesteam in 'steam\castlesteam.pas',
   castleinternalsteamapi in 'steam\castleinternalsteamapi.pas',
   ctypes in 'steam\ctypes.pas',
@@ -11,7 +11,8 @@ uses
   castleutils in 'steam\castleutils.pas',
   castlelog in 'override\castlelog.pas',
   castlefilesutils in 'override\castlefilesutils.pas',
-  castlestringutils in 'override\castlestringutils.pas';
+  castlestringutils in 'override\castlestringutils.pas',
+  castleapplicationproperties in 'override\castleapplicationproperties.pas';
 
 {$R *.res}
 
