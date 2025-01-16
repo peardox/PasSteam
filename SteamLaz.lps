@@ -12,7 +12,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="src\lazmain.pas"/>
@@ -20,14 +20,61 @@
         <ComponentName Value="Form1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <UsageCount Value="20"/>
+        <CursorPos X="76" Y="8"/>
+        <UsageCount Value="21"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="override\castleapplicationproperties.pas"/>
+        <Filename Value="steam\castledynlib.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleDynLib"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castleinternalsteamapi.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleInternalSteamApi"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castlesteam.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleSteam"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castleutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleUtils"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="component\steamapp.lcl.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="61" Y="6"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="override\castleapplicationproperties.pas"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
@@ -36,7 +83,6 @@
       </Unit>
       <Unit>
         <Filename Value="override\castlefilesutils.pas"/>
-        <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
@@ -45,7 +91,6 @@
       </Unit>
       <Unit>
         <Filename Value="override\castlelog.pas"/>
-        <IsPartOfProject Value="True"/>
         <UnitName Value="CastleLog"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
@@ -55,7 +100,6 @@
       </Unit>
       <Unit>
         <Filename Value="override\castlestringutils.pas"/>
-        <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
@@ -68,47 +112,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
-      </Unit>
-      <Unit>
-        <Filename Value="steam\castledynlib.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="CastleDynLib"/>
-        <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
-      </Unit>
-      <Unit>
-        <Filename Value="steam\castleinternalsteamapi.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="CastleInternalSteamApi"/>
-        <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
-      </Unit>
-      <Unit>
-        <Filename Value="steam\castlesteam.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="CastleSteam"/>
-        <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
-      </Unit>
-      <Unit>
-        <Filename Value="steam\castleutils.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="CastleUtils"/>
-        <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_filenames.inc"/>
@@ -116,7 +120,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_math.inc"/>
@@ -124,7 +128,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_miscella.inc"/>
@@ -132,7 +136,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_os_specific_unix.inc"/>
@@ -140,7 +144,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_os_specific_windows.inc"/>
@@ -148,7 +152,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_platform.inc"/>
@@ -156,7 +160,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_pointers.inc"/>
@@ -164,7 +168,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_primitive_lists.inc"/>
@@ -172,7 +176,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_program_exit.inc"/>
@@ -180,7 +184,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_read_write.inc"/>
@@ -188,7 +192,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_struct_list.inc"/>
@@ -196,7 +200,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_types.inc"/>
@@ -204,7 +208,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleversion.inc"/>
@@ -212,14 +216,12 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\ctypes.pas"/>
         <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
+        <TopLine Value="86"/>
         <UsageCount Value="20"/>
       </Unit>
       <Unit>
@@ -228,7 +230,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="steam\norqcheckend.inc"/>
@@ -236,19 +238,77 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="21"/>
       </Unit>
       <Unit>
         <Filename Value="C:\fpcupdeluxe\fpcsrc\packages\winunits-base\src\activex.pp"/>
         <UnitName Value="ActiveX"/>
-        <EditorIndex Value="-1"/>
-        <CursorPos X="17" Y="13"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <CursorPos X="27" Y="14"/>
         <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\castleutils_delphi_compatibility.inc"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\original\castleapplicationproperties.pas"/>
+        <UnitName Value="CastleApplicationProperties"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\original\castlefilesutils.pas"/>
+        <UnitName Value="CastleFilesUtils"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\original\castlelog.pas"/>
+        <UnitName Value="CastleLog"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\original\castlestringutils.pas"/>
+        <UnitName Value="CastleStringUtils"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
       </Unit>
     </Units>
-    <JumpHistory>
+    <JumpHistory HistoryIndex="3">
       <Position>
         <Filename Value="src\lazmain.pas"/>
+      </Position>
+      <Position>
+        <Filename Value="component\steamapp.lcl.pas"/>
+        <Caret Line="6" Column="61"/>
+      </Position>
+      <Position>
+        <Filename Value="src\lazmain.pas"/>
+        <Caret Line="8" Column="76"/>
+      </Position>
+      <Position>
+        <Filename Value="component\steamapp.lcl.pas"/>
+        <Caret Line="6" Column="61"/>
       </Position>
     </JumpHistory>
     <RunParams>
