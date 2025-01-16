@@ -267,7 +267,7 @@ begin
     { On macOS, search for dynamic libraries in the bundle too.
       This fallback makes sense for libpng, libvorbisfile, libsteam_api...
       It seems that for everything, so just do it always. }
-    {$ifdef DARWIN}
+    {$ifdef MACOS}
     if (Handle = InvalidDynLibHandle) and (BundlePath <> '') then
       Handle := LoadLibrary(PChar(BundlePath + 'Contents/MacOS/' + AName));
     {$endif}

@@ -26,7 +26,7 @@ var
   Steam: TSteamApp;
 
 const
-  AppId: Integer = 480;
+  AppId: Integer = 316790;
 
 implementation
 
