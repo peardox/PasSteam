@@ -225,6 +225,7 @@ begin
       '.config' + PathDelim +
       ApplicationName + PathDelim;
 {$endif}
+
 {$ifdef MACOS}
 begin
   // TODO: simplest implementation hardcoded now, look how FPC implements it

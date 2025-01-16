@@ -319,6 +319,7 @@
         <DCCReference Include="override\castlestringutils.pas"/>
         <DCCReference Include="override\castleapplicationproperties.pas"/>
         <DCCReference Include="component\SteamApp.fmx.pas"/>
+        <DCCReference Include="override\delphisteam.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

@@ -13,7 +13,8 @@ uses
   castlefilesutils in 'override\castlefilesutils.pas',
   castlestringutils in 'override\castlestringutils.pas',
   castleapplicationproperties in 'override\castleapplicationproperties.pas',
-  SteamApp.fmx in 'component\SteamApp.fmx.pas';
+  SteamApp.fmx in 'component\SteamApp.fmx.pas',
+  delphisteam in 'override\delphisteam.pas';
 
 {$R *.res}
 
