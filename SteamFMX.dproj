@@ -320,6 +320,7 @@
         <DCCReference Include="override\castleapplicationproperties.pas"/>
         <DCCReference Include="component\SteamApp.fmx.pas"/>
         <DCCReference Include="override\delphisteam.pas"/>
+        <None Include="steam\castleutils_delphi_compatibility.inc"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -558,6 +559,12 @@
                 <DeployFile LocalName="data\steam_appid.txt" Configuration="Release" Class="File">
                     <Platform Name="Win64">
                         <RemoteName>steam_appid.txt</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="steam\castleutils_delphi_compatibility.inc" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="OSXARM64">
+                        <RemoteDir>Contents\Resources\StartUp\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

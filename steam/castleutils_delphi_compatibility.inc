@@ -226,6 +226,7 @@ begin
       ApplicationName + PathDelim;
 {$endif}
 
+{$ifndef FPC}
 {$ifdef MACOS}
 begin
   // TODO: simplest implementation hardcoded now, look how FPC implements it
@@ -235,6 +236,7 @@ begin
     Result := IncludeTrailingPathDelimiter(GetEnvironmentVariable('HOME')) +
       '.config' + PathDelim +
       ApplicationName + PathDelim;
+{$endif}
 {$endif}
 end;
 

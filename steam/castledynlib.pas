@@ -271,6 +271,9 @@ begin
     {$ifdef DARWIN}
     if (Handle = InvalidDynLibHandle) and (BundlePath <> '') then
       Handle := LoadLibrary(PChar(BundlePath + 'Contents/MacOS/' + AName));
+    {$elseif not defined(FPC) and defined(MACOS)}
+    if (Handle = InvalidDynLibHandle) and (BundlePath <> '') then
+      Handle := LoadLibrary(PChar(BundlePath + 'Contents/MacOS/' + AName));
     {$endif}
   end;
 

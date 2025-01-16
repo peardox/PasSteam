@@ -10,6 +10,15 @@
         <DeviceId Condition="'$(Platform)'=='iOSSimARM64'"/>
     </PropertyGroup>
     <ItemGroup Condition="'$(Platform)'=='OSX64'">
+        <DeployFile Include="OSX64\Debug\SteamFMX.dSYM" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>SteamFMX.app\..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
+            <RemoteName>SteamFMX</RemoteName>
+            <DeployClass>ProjectOSXDebug</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
         <DeployFile Include="data\OSX\libsteam_api.dylib" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SteamFMX.app\Contents\MacOS\</RemoteDir>
             <RemoteName>libsteam_api.dylib</RemoteName>
@@ -28,15 +37,6 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="OSX64\Debug\SteamFMX.entitlements" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SteamFMX.app\..\</RemoteDir>
-            <RemoteName>SteamFMX.entitlements</RemoteName>
-            <DeployClass>ProjectOSXEntitlements</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
         <DeployFile Include="$(BDS)\bin\delphi_PROJECTICNS.icns" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SteamFMX.app\Contents\Resources\</RemoteDir>
             <RemoteName>SteamFMX.icns</RemoteName>
@@ -46,10 +46,10 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="OSX64\Debug\SteamFMX.info.plist" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SteamFMX.app\Contents\</RemoteDir>
-            <RemoteName>Info.plist</RemoteName>
-            <DeployClass>ProjectOSXInfoPList</DeployClass>
+        <DeployFile Include="OSX64\Debug\SteamFMX.entitlements" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>SteamFMX.app\..\</RemoteDir>
+            <RemoteName>SteamFMX.entitlements</RemoteName>
+            <DeployClass>ProjectOSXEntitlements</DeployClass>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
@@ -73,10 +73,10 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="OSX64\Debug\SteamFMX.dSYM" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SteamFMX.app\..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
-            <RemoteName>SteamFMX</RemoteName>
-            <DeployClass>ProjectOSXDebug</DeployClass>
+        <DeployFile Include="OSX64\Debug\SteamFMX.info.plist" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>SteamFMX.app\Contents\</RemoteDir>
+            <RemoteName>Info.plist</RemoteName>
+            <DeployClass>ProjectOSXInfoPList</DeployClass>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
@@ -233,6 +233,15 @@
             <RemoteName>Info.plist</RemoteName>
             <DeployClass>ProjectOSXInfoPList</DeployClass>
             <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="steam\castleutils_delphi_compatibility.inc" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>SteamFMX.app\Contents\Resources\StartUp\</RemoteDir>
+            <RemoteName>castleutils_delphi_compatibility.inc</RemoteName>
+            <DeployClass>ProjectFile</DeployClass>
+            <Operation>0</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
