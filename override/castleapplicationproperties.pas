@@ -166,6 +166,6 @@ end;
 
 initialization
 finalization
-  FreeAndNil(ApplicationProperties);
+  FreeAndNil(FApplicationProperties);
 
 end.

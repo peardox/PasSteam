@@ -20,7 +20,9 @@
         <ComponentName Value="Form1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <CursorPos X="76" Y="8"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="9"/>
+        <CursorPos X="21" Y="59"/>
         <UsageCount Value="21"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -30,9 +32,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="CastleDynLib"/>
         <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
+        <TopLine Value="250"/>
+        <CursorPos X="11" Y="274"/>
         <UsageCount Value="21"/>
       </Unit>
       <Unit>
@@ -40,9 +41,7 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="CastleInternalSteamApi"/>
         <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
+        <TopLine Value="343"/>
         <UsageCount Value="21"/>
       </Unit>
       <Unit>
@@ -68,17 +67,16 @@
       <Unit>
         <Filename Value="component\steamapp.lcl.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
-        <CursorPos X="61" Y="6"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="3" Y="6"/>
         <UsageCount Value="21"/>
-        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="override\castleapplicationproperties.pas"/>
+        <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
+        <TopLine Value="118"/>
+        <CursorPos X="15" Y="169"/>
         <UsageCount Value="20"/>
       </Unit>
       <Unit>
@@ -243,11 +241,9 @@
       <Unit>
         <Filename Value="C:\fpcupdeluxe\fpcsrc\packages\winunits-base\src\activex.pp"/>
         <UnitName Value="ActiveX"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="-1"/>
         <CursorPos X="27" Y="14"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="steam\castleutils_delphi_compatibility.inc"/>
@@ -294,21 +290,29 @@
         <UsageCount Value="21"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="3">
+    <JumpHistory HistoryIndex="5">
       <Position>
         <Filename Value="src\lazmain.pas"/>
-      </Position>
-      <Position>
-        <Filename Value="component\steamapp.lcl.pas"/>
-        <Caret Line="6" Column="61"/>
       </Position>
       <Position>
         <Filename Value="src\lazmain.pas"/>
         <Caret Line="8" Column="76"/>
       </Position>
       <Position>
-        <Filename Value="component\steamapp.lcl.pas"/>
-        <Caret Line="6" Column="61"/>
+        <Filename Value="src\lazmain.pas"/>
+        <Caret Line="13" Column="3"/>
+      </Position>
+      <Position>
+        <Filename Value="src\lazmain.pas"/>
+        <Caret Line="50"/>
+      </Position>
+      <Position>
+        <Filename Value="src\lazmain.pas"/>
+        <Caret Line="9" Column="15"/>
+      </Position>
+      <Position>
+        <Filename Value="src\lazmain.pas"/>
+        <Caret Line="45" Column="25" TopLine="9"/>
       </Position>
     </JumpHistory>
     <RunParams>

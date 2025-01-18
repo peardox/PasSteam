@@ -3,7 +3,7 @@ unit steamapp.lcl;
 interface
 
 uses
-  System.Classes, CastleSteam, CastleApplicationProperties, ExtCtrls;
+  Classes, CastleSteam, CastleApplicationProperties, ExtCtrls;
 
 type
   TSteamApp = Class(TCastleSteam)
@@ -50,7 +50,7 @@ begin
   if(AValue > 0) then
     begin
       FInterval := AValue;
-      FAppTimer.OnTimer := AppUpdate;
+      FAppTimer.OnTimer := {$ifdef fpc}@{$endif}AppUpdate;
       FAppTimer.Interval := FInterval;
       FAppTimer.Enabled := True;
     end

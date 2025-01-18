@@ -6,7 +6,6 @@ uses
   FMXMain in 'src\FMXMain.pas' {Form1},
   castlesteam in 'steam\castlesteam.pas',
   castleinternalsteamapi in 'steam\castleinternalsteamapi.pas',
-  ctypes in 'steam\ctypes.pas',
   castledynlib in 'steam\castledynlib.pas',
   castleutils in 'steam\castleutils.pas',
   castlelog in 'override\castlelog.pas',
@@ -14,7 +13,8 @@ uses
   castlestringutils in 'override\castlestringutils.pas',
   castleapplicationproperties in 'override\castleapplicationproperties.pas',
   SteamApp.fmx in 'component\SteamApp.fmx.pas',
-  delphisteam in 'override\delphisteam.pas';
+  delphisteam in 'override\delphisteam.pas',
+  ctypes in 'steam\delphi\ctypes.pas';
 
 {$R *.res}
 

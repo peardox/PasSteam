@@ -5,10 +5,11 @@
         <FrameworkType>FMX</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">OSXARM64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>168083</TargetedPlatforms>
         <AppType>Application</AppType>
         <MainSource>SteamFMX.dpr</MainSource>
+        <ProjectName Condition="'$(ProjectName)'==''">SteamFMX</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -311,7 +312,6 @@
         </DCCReference>
         <DCCReference Include="steam\castlesteam.pas"/>
         <DCCReference Include="steam\castleinternalsteamapi.pas"/>
-        <DCCReference Include="steam\ctypes.pas"/>
         <DCCReference Include="steam\castledynlib.pas"/>
         <DCCReference Include="steam\castleutils.pas"/>
         <DCCReference Include="override\castlelog.pas"/>
@@ -320,6 +320,7 @@
         <DCCReference Include="override\castleapplicationproperties.pas"/>
         <DCCReference Include="component\SteamApp.fmx.pas"/>
         <DCCReference Include="override\delphisteam.pas"/>
+        <DCCReference Include="steam\delphi\ctypes.pas"/>
         <None Include="steam\castleutils_delphi_compatibility.inc"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
