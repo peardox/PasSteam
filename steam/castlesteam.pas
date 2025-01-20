@@ -206,7 +206,12 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     if SteamLibrary <> nil then
     begin
       // Initialize Steam API
+      {$define USE_TESTING_API}
+      {$if defined(USE_TESTING_API)}
+      if SteamAPI_InitFlat(Nil) = k_ESteamAPIInitResult_OK then
+      {$else}
       if SteamAPI_Init() then
+      {$endif}
       begin
         WriteLnLog('SteamAPI_Init successfull');
 
@@ -253,7 +258,9 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     // Init SteamUserStats and request UserStats (will wait for callback, handled in Update)
     SteamUserStats := SteamAPI_ISteamClient_GetISteamUserStats(
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSERSTATS_INTERFACE_VERSION);
+    {$if not defined(USE_TESTING_API)}
     SteamAPI_ISteamUserStats_RequestCurrentStats(SteamUserStats);
+    {$endif}
 
     SteamAPI_ManualDispatch_Init();
   end;

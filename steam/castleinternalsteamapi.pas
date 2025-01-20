@@ -44,6 +44,20 @@
     have provided in hunting down the specific calls
     that work and a few tricks to make them work properly.
 }
+
+{ USE_TESTING_API allows switching between an established tested API
+  and a newer API that is being tested. It makes upgrading between two
+  APIs far simpler as when defined an exception may be raised when
+  loading the library. The 'testing' library should be renamed to
+  include it's version as a suffix e.g. steam_api64.dll would be
+  renamed to steam_api64_161.dll and LIBVER, below set to the matching
+  suffix.
+
+  II SHOULD NORMALLY NOT BE DEFINED - note also in CastleSteam
+}
+
+{$define USE_TESTING_API}
+
 unit CastleInternalSteamApi;
 
 {$I castleconf.inc}
@@ -72,6 +86,7 @@ type
   CGameID = UInt64;
   EResult = UInt32;
   TAppId = UInt32;
+  PSteamErrMsg = PChar;
 
   { Express all "bool" from Steam API using this type.
 
@@ -92,12 +107,23 @@ type
 
 const
   { Versions of Steam API interfaces.
-    Correspond to Steamworks 1.57 version. }
+    Correspond to Steamworks 1.xx controlled by API_XXX with fallback to 1.57 version. }
+{$if defined(USE_TESTING_API)}
+  STEAMCLIENT_INTERFACE_VERSION = 'SteamClient021'; //< isteamclient.h
+  STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
+  STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION013'; //< isteamuserstats.h
+  VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  LIBVER = '_161';
+{$else}
   STEAMCLIENT_INTERFACE_VERSION = 'SteamClient020'; //< isteamclient.h
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION012'; //< isteamuserstats.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+//  LIBVER = '';
+  LIBVER = '_157';
+{$endif}
 
 type
   SteamAPIWarningMessageHook = procedure (nSeverity: Integer; pchDebugText: PAnsiChar); Cdecl;
@@ -169,6 +195,12 @@ const
   k_uAPICallInvalid = TSteamAPICall(0);
 
 type
+  TSteamAPIInitResult = (	k_ESteamAPIInitResult_OK = 0, // Success
+    k_ESteamAPIInitResult_FailedGeneric = 1, // Some other failure
+    k_ESteamAPIInitResult_NoSteamClient = 2, // We cannot connect to Steam, steam probably isn't running
+    k_ESteamAPIInitResult_VersionMismatch = 3 // Steam client appears to be out of date
+  );
+
   // Purpose: called when a SteamAsyncCall_t has completed (or failed)
   TSteamAPICallCompleted = record
   const
@@ -205,7 +237,11 @@ type
 
 var
   // steam_api.h translation (full documentation at https://partner.steamgames.com/doc/api/steam_api )
+  {$if defined(USE_TESTING_API)}
+  SteamAPI_InitFlat: function (pOutErrMsg: PSteamErrMsg): TSteamAPIInitResult; CDecl;
+  {$else}
   SteamAPI_Init: function (): TSteamBool; CDecl;
+  {$endif}
   SteamAPI_ReleaseCurrentThreadMemory: procedure (); CDecl; // TODO: UNTESTED
   SteamAPI_RestartAppIfNecessary: function (unOwnAppID: TAppId): TSteamBool; CDecl;
   SteamAPI_RunCallbacks: procedure (); CDecl;
@@ -232,7 +268,10 @@ var
   SteamAPI_ISteamClient_GetISteamUserStats: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
 
   // ISteamUserStats
+  {$if not defined(USE_TESTING_API)}
   SteamAPI_ISteamUserStats_RequestCurrentStats: function (SteamUserStats: Pointer): TSteamBool; CDecl;
+  {$endif}
+
   SteamAPI_ISteamUserStats_GetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; Achieved: PSteamBool): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_SetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_ClearAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
@@ -286,9 +325,9 @@ const
     {$elseif defined(UNIX)}
     'libsteam_api.so'
     {$elseif defined(MSWINDOWS) and defined(CPUX64)}
-    'steam_api64.dll'
+    'steam_api64' + LIBVER + '.dll'
     {$elseif defined(MSWINDOWS) and defined(CPUX86)}
-    'steam_api.dll'
+    'steam_api' + LIBVER + '.dll'
     {$else}
     // Steam library not available on this platform
     ''
@@ -304,7 +343,11 @@ uses
 
 procedure FinalizeSteamLibrary;
 begin
+  {$if defined(USE_TESTING_API)}
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_InitFlat) := nil;
+  {$else}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_Init) := nil;
+  {$endif}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ReleaseCurrentThreadMemory) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_RestartAppIfNecessary) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_RunCallbacks) := nil;
@@ -322,7 +365,9 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := nil;
+  {$if not defined(USE_TESTING_API)}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := nil;
+  {$endif}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := nil;
@@ -352,7 +397,11 @@ begin
 
   if SteamLibrary <> nil then
   begin
+    {$if defined(USE_TESTING_API)}
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_InitFlat) := SteamLibrary.Symbol('SteamAPI_InitFlat');
+    {$else}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_Init) := SteamLibrary.Symbol('SteamAPI_Init');
+    {$endif}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ReleaseCurrentThreadMemory) := SteamLibrary.Symbol('SteamAPI_ReleaseCurrentThreadMemory');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_RestartAppIfNecessary) := SteamLibrary.Symbol('SteamAPI_RestartAppIfNecessary');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_RunCallbacks) := SteamLibrary.Symbol('SteamAPI_RunCallbacks');
@@ -370,7 +419,9 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := SteamLibrary.Symbol('SteamAPI_ISteamClient_SetWarningMessageHook');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUser');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUserStats');
+    {$if not defined(USE_TESTING_API)}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
+    {$endif}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievement');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_SetAchievement');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_ClearAchievement');

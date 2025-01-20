@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.StdCtrls, FMX.Controls.Presentation,
-  SteamApp.fmx;
+  SteamApp.fmx, FMX.ListBox, FMX.Layouts;
 
 type
   TAchievementLine = Class(TPanel)
@@ -14,6 +14,9 @@ type
 
   TForm1 = class(TForm)
     Label1: TLabel;
+    ListBox1: TListBox;
+    ListBoxItem1: TListBoxItem;
+    StyleBook1: TStyleBook;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
 //    procedure AppUpdate(Sender: TObject);

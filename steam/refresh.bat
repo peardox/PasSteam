@@ -1,10 +1,12 @@
+mkdir delphi
+
 copy c:\Components\castle-engine\src\services\steam\castlesteam.pas .
 copy c:\Components\castle-engine\src\services\steam\castleinternalsteamapi.pas .
 copy c:\Components\castle-engine\src\base\castledynlib.pas .
-rem copy c:\Components\castle-engine\src\base\castlestringutils.pas .
+
 copy c:\Components\castle-engine\src\base\castleutils.pas .
-copy c:\Components\castle-engine\src\compatibility\delphi-only\ctypes.pas .
-rem copy c:\Components\castle-engine\src\files\castlefilesutils.pas .
+copy c:\Components\castle-engine\src\compatibility\delphi-only\ctypes.pas delphi\ctypes.pas
+
 
 copy c:\Components\castle-engine\src\common_includes\castleconf.inc .
 copy c:\Components\castle-engine\src\base\castleutils_types.inc .

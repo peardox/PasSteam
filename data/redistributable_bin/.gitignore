@@ -1,0 +1,7 @@
+*.lib
+!*.dll
+!win64
+!osx
+!linux32
+!linux64
+
