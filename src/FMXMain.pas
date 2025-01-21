@@ -10,9 +10,6 @@ uses
   CastleLog, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.TabControl;
 
 type
-  TAchievementLine = Class(TPanel)
-  end;
-
   TForm1 = class(TForm)
     StyleBook1: TStyleBook;
     TabControl1: TTabControl;

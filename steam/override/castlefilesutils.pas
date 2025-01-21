@@ -4,7 +4,7 @@ interface
 
 {$IFDEF MACOS}{$define DARWIN}{$ENDIF}
 
-uses {$IFDEF MACOS}Macapi.CoreFoundation, {$ENDIF}{$ifdef fpc}MacOSAll, {$endif}
+uses {$IFDEF MACOS}Macapi.CoreFoundation, {$ENDIF}{$ifdef fpc}{$ifdef darwin}MacOSAll,{$endif}{$endif}
   SysUtils, CastleLog;
 
 {$if defined(darwin)}

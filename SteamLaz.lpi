@@ -57,17 +57,30 @@
         <UnitName Value="CastleSteam"/>
       </Unit>
       <Unit>
-        <Filename Value="steam\castleutils.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="CastleUtils"/>
-      </Unit>
-      <Unit>
         <Filename Value="component\steamapp.lcl.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="override\castleapplicationproperties.pas"/>
+        <Filename Value="steam\override\castleapplicationproperties.pas"/>
         <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\override\castlefilesutils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\override\castlelog.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleLog"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\override\castlestringutils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="steam\override\castleutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CastleUtils"/>
       </Unit>
     </Units>
   </ProjectOptions>
@@ -79,7 +92,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="src;component;steam;override"/>
+      <OtherUnitFiles Value="src;component;steam;steam\override"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

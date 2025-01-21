@@ -11,7 +11,8 @@ uses
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lazmain, steamapp.lcl, CastleDynLib, CastleInternalSteamApi,
-  CastleSteam, CastleUtils, castleapplicationproperties;
+  CastleSteam, castleapplicationproperties, castlefilesutils, CastleLog,
+  castlestringutils, CastleUtils;
 
 {$R *.res}
 

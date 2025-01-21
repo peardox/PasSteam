@@ -3,16 +3,16 @@ program SteamVCL;
 uses
   Vcl.Forms,
   VCLMain in 'src\VCLMain.pas' {Form1},
-  castleapplicationproperties in 'override\castleapplicationproperties.pas',
-  castlefilesutils in 'override\castlefilesutils.pas',
-  castlelog in 'override\castlelog.pas',
-  castlestringutils in 'override\castlestringutils.pas',
+  SteamApp.vcl in 'component\SteamApp.vcl.pas',
   castledynlib in 'steam\castledynlib.pas',
   castleinternalsteamapi in 'steam\castleinternalsteamapi.pas',
   castlesteam in 'steam\castlesteam.pas',
-  castleutils in 'steam\castleutils.pas',
-  ctypes in 'steam\ctypes.pas',
-  SteamApp.vcl in 'component\SteamApp.vcl.pas';
+  ctypes in 'steam\delphi\ctypes.pas',
+  castleapplicationproperties in 'steam\override\castleapplicationproperties.pas',
+  castlefilesutils in 'steam\override\castlefilesutils.pas',
+  castlelog in 'steam\override\castlelog.pas',
+  castlestringutils in 'steam\override\castlestringutils.pas',
+  castleutils in 'steam\override\castleutils.pas';
 
 {$R *.res}
 
