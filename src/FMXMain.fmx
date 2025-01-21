@@ -9,35 +9,6 @@ object Form1: TForm1
   FormFactor.Devices = [Desktop]
   OnCreate = FormCreate
   DesignerMasterStyle = 0
-  object Label1: TLabel
-    Align = Bottom
-    Position.Y = 463.000000000000000000
-    Size.Width = 640.000000000000000000
-    Size.Height = 17.000000000000000000
-    Size.PlatformDefault = False
-    Text = 'Label1'
-    TabOrder = 2
-  end
-  object ListBox1: TListBox
-    Position.X = 40.000000000000000000
-    Position.Y = 48.000000000000000000
-    TabOrder = 4
-    DisableFocusEffect = True
-    ItemHeight = 76.000000000000000000
-    DefaultItemStyles.ItemStyle = ''
-    DefaultItemStyles.GroupHeaderStyle = ''
-    DefaultItemStyles.GroupFooterStyle = ''
-    Viewport.Width = 196.000000000000000000
-    Viewport.Height = 196.000000000000000000
-    object ListBoxItem1: TListBoxItem
-      Size.Width = 196.000000000000000000
-      Size.Height = 76.000000000000000000
-      Size.PlatformDefault = False
-      StyleLookup = 'CustomItem'
-      TabOrder = 0
-      Text = 'ListBoxItem1'
-    end
-  end
   object StyleBook1: TStyleBook
     Styles = <
       item
@@ -92,5 +63,85 @@ object Form1: TForm1
       end>
     Left = 528
     Top = 400
+  end
+  object TabControl1: TTabControl
+    Align = Client
+    Size.Width = 640.000000000000000000
+    Size.Height = 480.000000000000000000
+    Size.PlatformDefault = False
+    TabIndex = 0
+    TabOrder = 5
+    TabPosition = PlatformDefault
+    Sizes = (
+      640s
+      454s
+      640s
+      454s)
+    object TabItem1: TTabItem
+      CustomIcon = <
+        item
+        end>
+      TextSettings.Trimming = None
+      IsSelected = True
+      Size.Width = 53.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Steam'
+      object Label1: TLabel
+        Align = Bottom
+        Position.Y = 437.000000000000000000
+        Size.Width = 640.000000000000000000
+        Size.Height = 17.000000000000000000
+        Size.PlatformDefault = False
+        Text = 'Label1'
+        TabOrder = 2
+      end
+      object ListBox1: TListBox
+        Position.X = 40.000000000000000000
+        Position.Y = 48.000000000000000000
+        TabOrder = 4
+        DisableFocusEffect = True
+        ItemHeight = 76.000000000000000000
+        DefaultItemStyles.ItemStyle = ''
+        DefaultItemStyles.GroupHeaderStyle = ''
+        DefaultItemStyles.GroupFooterStyle = ''
+        Viewport.Width = 196.000000000000000000
+        Viewport.Height = 196.000000000000000000
+        object ListBoxItem1: TListBoxItem
+          Size.Width = 196.000000000000000000
+          Size.Height = 76.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'CustomItem'
+          TabOrder = 0
+          Text = 'ListBoxItem1'
+        end
+      end
+    end
+    object TabItem2: TTabItem
+      CustomIcon = <
+        item
+        end>
+      TextSettings.Trimming = None
+      IsSelected = False
+      Size.Width = 40.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Log'
+      object Memo1: TMemo
+        Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+        DataDetectorTypes = []
+        Align = Client
+        Size.Width = 640.000000000000000000
+        Size.Height = 454.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Viewport.Width = 636.000000000000000000
+        Viewport.Height = 450.000000000000000000
+      end
+    end
   end
 end

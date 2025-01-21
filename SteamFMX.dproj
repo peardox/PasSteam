@@ -314,13 +314,13 @@
         <DCCReference Include="steam\castleinternalsteamapi.pas"/>
         <DCCReference Include="steam\castledynlib.pas"/>
         <DCCReference Include="steam\castleutils.pas"/>
-        <DCCReference Include="override\castlelog.pas"/>
         <DCCReference Include="override\castlefilesutils.pas"/>
         <DCCReference Include="override\castlestringutils.pas"/>
         <DCCReference Include="override\castleapplicationproperties.pas"/>
         <DCCReference Include="component\SteamApp.fmx.pas"/>
         <DCCReference Include="override\delphisteam.pas"/>
         <DCCReference Include="steam\delphi\ctypes.pas"/>
+        <DCCReference Include="override\castlelog.pas"/>
         <None Include="steam\castleutils_delphi_compatibility.inc"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
@@ -566,6 +566,12 @@
                 <DeployFile LocalName="steam\castleutils_delphi_compatibility.inc" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="OSXARM64">
                         <RemoteDir>Contents\Resources\StartUp\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="steam\castleutils_delphi_compatibility.inc" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

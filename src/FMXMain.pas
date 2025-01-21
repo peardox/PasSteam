@@ -6,17 +6,22 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.StdCtrls, FMX.Controls.Presentation,
-  SteamApp.fmx, FMX.ListBox, FMX.Layouts;
+  SteamApp.fmx, FMX.ListBox, FMX.Layouts,
+  CastleLog, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.TabControl;
 
 type
   TAchievementLine = Class(TPanel)
   end;
 
   TForm1 = class(TForm)
+    StyleBook1: TStyleBook;
+    TabControl1: TTabControl;
+    TabItem1: TTabItem;
     Label1: TLabel;
     ListBox1: TListBox;
     ListBoxItem1: TListBoxItem;
-    StyleBook1: TStyleBook;
+    TabItem2: TTabItem;
+    Memo1: TMemo;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
 //    procedure AppUpdate(Sender: TObject);
@@ -40,6 +45,7 @@ implementation
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  OutLog := Memo1.Lines;
   Steam := TSteamApp.Create(AppId);
   Steam.Interval := 17;
   Steam.OnUserStatsReceived := UserStatsReceived;

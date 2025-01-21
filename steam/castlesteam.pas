@@ -213,7 +213,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
       if SteamAPI_Init() then
       {$endif}
       begin
-        WriteLnLog('SteamAPI_Init successfull');
+        WriteLnLog('SteamAPI_Init successful');
 
         // If the app was started through EXE - restart the game through Steam
         if SteamAPI_RestartAppIfNecessary(AppId) then
@@ -260,6 +260,14 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSERSTATS_INTERFACE_VERSION);
     {$if not defined(USE_TESTING_API)}
     SteamAPI_ISteamUserStats_RequestCurrentStats(SteamUserStats);
+    {$else}
+    if SteamUserStats <> Nil then
+      begin
+        FUserStatsReceived := true;
+        GetAchievements;
+        if Assigned(OnUserStatsReceived) then
+          OnUserStatsReceived(Self);
+      end;
     {$endif}
 
     SteamAPI_ManualDispatch_Init();
@@ -428,7 +436,7 @@ procedure TCastleSteam.Update(Sender: TObject);
   }
   procedure SteamRunCallbacks;
   { Extra logging of unhandled Steam callbacks (it's normal that we have some). }
-  {.$define CASTLE_DEBUG_STEAM_CALLBACKS}
+  {$define CASTLE_DEBUG_STEAM_CALLBACKS}
   var
     Callback: TCallbackMsg;
     PCallCompleted: PSteamAPICallCompleted;
@@ -473,6 +481,9 @@ procedure TCastleSteam.Update(Sender: TObject);
           end;
         TUserStatsReceived.k_iCallback:
           begin
+       //     {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
+            WritelnLog('Got Stats');
+       //     {$endif}
             CallbackUserStatsReceived(PUserStatsReceived(Callback.m_pubParam));
           end;
         else

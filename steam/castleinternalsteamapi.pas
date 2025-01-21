@@ -50,13 +50,17 @@
   APIs far simpler as when defined an exception may be raised when
   loading the library. The 'testing' library should be renamed to
   include it's version as a suffix e.g. steam_api64.dll would be
-  renamed to steam_api64_161.dll and LIBVER, below set to the matching
+  renamed to steam_api64_161.dll and LIBVER, below, set to the matching
   suffix.
 
-  II SHOULD NORMALLY NOT BE DEFINED - note also in CastleSteam
+  After successful testing the constants below should all be the same
+  until a new API upgrade is required - essentially making the define = !define
+  and LIBVER should be an empty string ('')
+
+  II SHOULD NORMALLY NOT BE DEFINED - note also in CastleSteam while testing
 }
 
-{$define USE_TESTING_API}
+ {$define USE_TESTING_API}
 
 unit CastleInternalSteamApi;
 
@@ -121,8 +125,8 @@ const
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION012'; //< isteamuserstats.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-//  LIBVER = '';
-  LIBVER = '_157';
+  LIBVER = '';
+//  LIBVER = '_157';
 {$endif}
 
 type
@@ -278,6 +282,12 @@ var
   SteamAPI_ISteamUserStats_GetNumAchievements: function (SteamUserStats: Pointer): UInt32; CDecl;
   // It returns string-ID of the achievement, not a human readable name
   SteamAPI_ISteamUserStats_GetAchievementName: function (SteamUserStats: Pointer; AchievementId: UInt32 ): PAnsiChar; CDecl;
+  // It returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
+  SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const AchievementKey: PAnsiChar ): PAnsiChar; CDecl;
+  // It returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
+  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: UInt32): TSteamBool; CDecl;
+  // It returns a handle for the Achievement's image - needs further processing via callback
+  SteamAPI_ISteamUserStats_GetAchievementIcon: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): UInt32; CDecl;
   // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress
   SteamAPI_ISteamUserStats_IndicateAchievementProgress: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; CurrentProgress: UInt32; MaxProgress: UInt32): TSteamBool; CDecl;
   // Call this after changing stats or achievements
@@ -373,6 +383,9 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamUtils) := nil;
@@ -427,6 +440,9 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_ClearAchievement');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetNumAchievements');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementName');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementIcon');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_IndicateAchievementProgress');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_StoreStats');
     // alias to versioned entry point
