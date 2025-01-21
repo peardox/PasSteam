@@ -282,7 +282,7 @@ var
   // It returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
   SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const AchievementKey: PAnsiChar ): PAnsiChar; CDecl;
   // It returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
-  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: UInt32): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: PUInt32): TSteamBool; CDecl;
   // It returns a handle for the Achievement's image - needs further processing via callback
   SteamAPI_ISteamUserStats_GetAchievementIcon: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): UInt32; CDecl;
   // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress

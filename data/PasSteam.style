@@ -2,34 +2,26 @@ object TStyleContainer
   object TLayout
     StyleName = 'CustomItem'
     Align = Center
-    Size.Width = 330.000000000000000000
+    Size.Width = 640.000000000000000000
     Size.Height = 116.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
     object TImage
-      StyleName = 'Image1'
+      StyleName = 'IconImage'
       MultiResBitmap = <
         item
         end>
-      Position.X = 260.000000000000000000
-      Position.Y = 8.000000000000000000
-    end
-    object TImage
-      StyleName = 'Image2'
-      MultiResBitmap = <
-        item
-        end>
-      Position.X = 200.000000000000000000
+      Position.X = 560.000000000000000000
       Position.Y = 8.000000000000000000
     end
     object TText
       StyleName = 'Text1'
       Position.X = 8.000000000000000000
       Position.Y = 8.000000000000000000
-      Size.Width = 60.000000000000000000
+      Size.Width = 16.000000000000000000
       Size.Height = 20.000000000000000000
       Size.PlatformDefault = False
-      Text = 'API Name'
+      Text = 'K:'
       TextSettings.HorzAlign = Leading
     end
     object TText
@@ -37,51 +29,103 @@ object TStyleContainer
       Hint = '20'
       Position.X = 8.000000000000000000
       Position.Y = 28.000000000000000000
-      Size.Width = 60.000000000000000000
+      Size.Width = 16.000000000000000000
       Size.Height = 20.000000000000000000
       Size.PlatformDefault = False
-      Text = 'Ach Name'
+      Text = 'N:'
       TextSettings.HorzAlign = Leading
     end
     object TText
       StyleName = 'Text3'
       Position.X = 8.000000000000000000
       Position.Y = 48.000000000000000000
-      Size.Width = 60.000000000000000000
+      Size.Width = 16.000000000000000000
       Size.Height = 20.000000000000000000
       Size.PlatformDefault = False
-      Text = 'API Desc'
+      Text = 'D:'
       TextSettings.HorzAlign = Leading
     end
     object TText
-      StyleName = 'LabelApiName'
-      Position.X = 72.000000000000000000
+      StyleName = 'LabelApiKey'
+      Position.X = 24.000000000000000000
       Position.Y = 8.000000000000000000
-      Size.Width = 120.000000000000000000
+      Size.Width = 560.000000000000000000
       Size.Height = 20.000000000000000000
       Size.PlatformDefault = False
-      Text = 'API Name'
+      Text = 'API Key'
       TextSettings.HorzAlign = Leading
     end
     object TText
-      StyleName = 'LabelAchName'
-      Position.X = 72.000000000000000000
+      StyleName = 'LabelName'
+      Position.X = 24.000000000000000000
       Position.Y = 28.000000000000000000
-      Size.Width = 120.000000000000000000
+      Size.Width = 560.000000000000000000
       Size.Height = 20.000000000000000000
       Size.PlatformDefault = False
-      Text = 'Ach Name'
+      Text = 'Name'
       TextSettings.HorzAlign = Leading
     end
     object TText
-      StyleName = 'LabelAchDesc'
-      Position.X = 72.000000000000000000
+      StyleName = 'LabelDesc'
+      Position.X = 24.000000000000000000
       Position.Y = 48.000000000000000000
-      Size.Width = 120.000000000000000000
+      Size.Width = 560.000000000000000000
       Size.Height = 20.000000000000000000
       Size.PlatformDefault = False
-      Text = 'Ach Desc'
+      Text = 'Derscription'
       TextSettings.HorzAlign = Leading
+    end
+    object TText
+      StyleName = 'Text4'
+      Position.X = 8.000000000000000000
+      Position.Y = 68.000000000000000000
+      Size.Width = 16.000000000000000000
+      Size.Height = 20.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'H:'
+      TextSettings.HorzAlign = Leading
+    end
+    object TText
+      StyleName = 'Text5'
+      Position.X = 8.000000000000000000
+      Position.Y = 92.000000000000000000
+      Size.Width = 16.000000000000000000
+      Size.Height = 20.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'A:'
+      TextSettings.HorzAlign = Leading
+    end
+    object TSwitch
+      StyleName = 'SwitchProgress'
+      HitTest = False
+      IsChecked = False
+      Position.X = 28.000000000000000000
+      Position.Y = 68.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 20.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+    end
+    object TText
+      StyleName = 'LabelDoneDate'
+      Position.X = 84.000000000000000000
+      Position.Y = 92.000000000000000000
+      Size.Width = 240.000000000000000000
+      Size.Height = 20.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Date'
+      TextSettings.HorzAlign = Leading
+    end
+    object TSwitch
+      StyleName = 'SwitchDone'
+      HitTest = False
+      IsChecked = False
+      Position.X = 28.000000000000000000
+      Position.Y = 92.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 20.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
     end
   end
 end

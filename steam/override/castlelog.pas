@@ -24,7 +24,7 @@ function FormatDot(const Fmt: String; const Args: array of const): String;
 var
   FormatSettings: TFormatSettings;
 begin
-  FormatSettings := {$ifdef fpc}Default({$endif}TFormatSettings){$ifndef fpc}.Create{$endif};
+  FormatSettings := {$ifdef fpc}Default({$endif}TFormatSettings{$ifdef fpc}){$endif}{$ifndef fpc}.Create{$endif};
   FormatSettings.DecimalSeparator := '.';
   FormatSettings.ThousandSeparator := #0;
   Result := Format(Fmt, Args, FormatSettings);

@@ -23,10 +23,36 @@ unit CastleSteam;
 interface
 
 uses Classes,
+  {$ifndef fpc}System.Generics.Collections,{$endif}
   CastleInternalSteamApi;
 
 type
   TAppId = CastleInternalSteamApi.TAppId;
+
+  TSteamAchievement = Class
+    strict private
+      FApiId: String;
+      FName: String;
+      FDesc: String;
+      FHidden: Boolean;
+      FDone: Boolean;
+      FDoneDate: TDateTime;
+      FProgress: Uint32;
+      FProgressMax: Uint32;
+      FIcon: THandle;
+    protected
+      procedure Populate(SteamUserStats: Pointer; AchievementId: UInt32);
+    public
+      constructor Create;
+      property ApiId: String read FApiId;
+      property Name: String read FName;
+      property Desc: String read FDesc;
+      property Hidden: Boolean read FHidden;
+      property Done: Boolean read FDone;
+      property DoneDate: TDateTime read FDoneDate;
+  end;
+
+  TSteamAchievementList = {$ifdef fpc}specialize{$endif} TObjectList<TSteamAchievement>;
 
   { Integration with Steam.
     See @url(https://castle-engine.io/steam Steam and Castle Game Engine documentation)
@@ -39,7 +65,7 @@ type
   strict private
     FAppId: TAppId;
     FEnabled: Boolean;
-    FAchievements: TStrings;
+    FAchievements: TSteamAchievementList;
     FUserStatsReceived: Boolean;
     FOnUserStatsReceived: TNotifyEvent;
     StoreStats: Boolean;
@@ -106,7 +132,7 @@ type
       like @link(SetAchievement) or @link(GetAchievement).
       This field is initialized when @link(UserStatsReceived) becomes @true,
       it is @nil before. }
-    property Achievements: TStrings read FAchievements;
+    property Achievements: TSteamAchievementList read FAchievements;
 
     { Have we received user stats from Steam.
       Before this is @true, methods of this class dealing with user stats
@@ -180,7 +206,7 @@ type
 
 implementation
 
-uses SysUtils, CTypes,
+uses SysUtils, CTypes, DateUtils,
   CastleLog, CastleUtils, CastleApplicationProperties;
 
 procedure WarningHook(nSeverity: Integer; pchDebugText: PAnsiChar); Cdecl;
@@ -309,17 +335,22 @@ procedure TCastleSteam.GetAchievements;
 var
   NumAchievements: UInt32;
   I: Integer;
+  SteamAchievement: TSteamAchievement;
+  pchName : PAnsiChar;
 begin
   if not Enabled then
     Exit;
 
-  FreeAndNil(FAchievements);
-  FAchievements := TStringList.Create;
+  FAchievements := TSteamAchievementList.Create;
 
   NumAchievements := SteamAPI_ISteamUserStats_GetNumAchievements(SteamUserStats);
   if NumAchievements > 0 then
     for I := 0 to NumAchievements - 1 do
-      FAchievements.Add(String(SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, I)));
+      begin
+        SteamAchievement := TSteamAchievement.Create;
+        SteamAchievement.Populate(SteamUserStats, I);
+        FAchievements.Add(SteamAchievement);
+      end;
   WriteLnLog('Steam Achievements: %d', [Achievements.Count]);
 end;
 
@@ -385,17 +416,13 @@ begin
 end;
 
 procedure TCastleSteam.ClearAllAchievements;
-var
-  S: String;
 begin
+
   if not Enabled then
     Exit;
   if UserStatsReceived then
-  begin
-    for S in Achievements do
-      ClearAchievement(S)
-  end else
-    SteamError('ClearAllAchievements failed. ' + SUserStatsNotReceived);
+    FAchievements.Clear;
+
 end;
 
 procedure TCastleSteam.IndicateAchievementProgress(const AchievementId: String;
@@ -559,6 +586,34 @@ begin
   if not Enabled then
     Exit('');
   Result := String(SteamAPI_ISteamApps_GetCurrentGameLanguage(SteamAPI_SteamApps()));
+end;
+
+{ TSteamAchievement }
+
+constructor TSteamAchievement.Create;
+begin
+  Inherited;
+end;
+
+procedure TSteamAchievement.Populate(SteamUserStats: Pointer; AchievementId: UInt32);
+var
+  pchName: PAnsiChar;
+  pchHidden: PAnsiChar;
+  bDone: TSteamBool;
+  uDate: UInt32;
+begin
+  pchName := SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, AchievementId);
+  FApiId := String(pchName);
+  FName := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'name'));
+  FDesc := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'desc'));
+  pchHidden := SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'hidden');
+  if CompareStr(String(pchHidden), '1') = 0 then
+    FHidden := True
+  else
+    FHidden := False;
+  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(SteamUserStats, pchName, @bDone, @uDate);
+  FDone := bDone;
+  FDoneDate := UnixToDateTime(uDate);
 end;
 
 end.

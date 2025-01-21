@@ -7,7 +7,8 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.StdCtrls, FMX.Controls.Presentation,
   SteamApp.fmx, FMX.ListBox, FMX.Layouts,
-  CastleLog, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.TabControl;
+  CastleLog, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.TabControl,
+  FMX.Objects;
 
 type
   TForm1 = class(TForm)
@@ -16,12 +17,12 @@ type
     TabItem1: TTabItem;
     Label1: TLabel;
     ListBox1: TListBox;
-    ListBoxItem1: TListBoxItem;
     TabItem2: TTabItem;
     Memo1: TMemo;
+    Image1: TImage;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
-//    procedure AppUpdate(Sender: TObject);
+    procedure AppUpdate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -40,6 +41,17 @@ implementation
 
 {$R *.fmx}
 
+procedure TForm1.AppUpdate(Sender: TObject);
+var
+  AchievementCount: Integer;
+begin
+  if Assigned(Steam) then
+    begin
+      AchievementCount := Steam.Achievements.Count;
+      Label1.Text := 'Steam - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available - Update : ' + IntToStr(Steam.UpdateCount);
+    end;
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   OutLog := Memo1.Lines;
@@ -55,12 +67,28 @@ end;
 
 procedure TForm1.UserStatsReceived(Sender: TObject);
 var
-  AchievementCount: Integer;
+  Item: TListBoxItem;
+  I: Integer;
 begin
   if Assigned(Steam) then
     begin
-      AchievementCount := Steam.Achievements.Count;
-      Label1.Text := 'Steam - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available - Update : ' + IntToStr(Steam.UpdateCount);
+      ListBox1.BeginUpdate;
+      for I := 0 to Steam.Achievements.Count - 1 do
+        begin
+          Item := TListBoxItem.Create(nil);
+
+          Item.Parent := ListBox1;
+          Item.StyleLookup := 'CustomItem';
+          Item.Text := '';
+          Item.StylesData['LabelApiKey'] := Steam.Achievements[I].ApiId;
+          Item.StylesData['LabelName'] := Steam.Achievements[I].Name;
+          Item.StylesData['LabelDesc'] := Steam.Achievements[I].Desc;
+          Item.StylesData['SwitchProgress'] := Steam.Achievements[I].Hidden;
+          Item.StylesData['SwitchDone'] := Steam.Achievements[I].Done;
+          Item.StylesData['LabelDoneDate'] := Steam.Achievements[I].DoneDate;
+          Item.StylesData['IconImage'] := Image1.Bitmap;
+        end;
+      ListBox1.EndUpdate;
     end;
 end;
 
