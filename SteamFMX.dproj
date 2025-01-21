@@ -4,12 +4,11 @@
         <ProjectVersion>20.2</ProjectVersion>
         <FrameworkType>FMX</FrameworkType>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Config Condition="'$(Config)'==''">Release</Config>
+        <Platform Condition="'$(Platform)'==''">OSXARM64</Platform>
         <TargetedPlatforms>168083</TargetedPlatforms>
         <AppType>Application</AppType>
         <MainSource>SteamFMX.dpr</MainSource>
-        <ProjectName Condition="'$(ProjectName)'==''">SteamFMX</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -313,15 +312,13 @@
         <DCCReference Include="steam\castlesteam.pas"/>
         <DCCReference Include="steam\castleinternalsteamapi.pas"/>
         <DCCReference Include="steam\castledynlib.pas"/>
-        <DCCReference Include="steam\castleutils.pas"/>
-        <DCCReference Include="override\castlefilesutils.pas"/>
-        <DCCReference Include="override\castlestringutils.pas"/>
-        <DCCReference Include="override\castleapplicationproperties.pas"/>
         <DCCReference Include="component\SteamApp.fmx.pas"/>
-        <DCCReference Include="override\delphisteam.pas"/>
         <DCCReference Include="steam\delphi\ctypes.pas"/>
-        <DCCReference Include="override\castlelog.pas"/>
-        <None Include="steam\castleutils_delphi_compatibility.inc"/>
+        <DCCReference Include="steam\override\castleapplicationproperties.pas"/>
+        <DCCReference Include="steam\override\castlefilesutils.pas"/>
+        <DCCReference Include="steam\override\castlelog.pas"/>
+        <DCCReference Include="steam\override\castlestringutils.pas"/>
+        <DCCReference Include="steam\override\castleutils.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -367,18 +364,19 @@
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\delphi_PROJECTICNS.icns" Configuration="Debug" Class="ProjectOSXResource">
                     <Platform Name="OSXARM64">
+                        <Enabled>false</Enabled>
+                        <RemoteName>SteamFMX.icns</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="$(BDS)\bin\delphi_PROJECTICNS.icns" Configuration="Release" Class="ProjectOSXResource">
+                    <Platform Name="OSXARM64">
                         <RemoteName>SteamFMX.icns</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="Linux64\Debug\SteamFMX" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Linux64">
-                        <RemoteName>SteamFMX</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="OSX64\Debug\SteamFMX.dSYM" Configuration="Debug" Class="ProjectOSXDebug">
-                    <Platform Name="OSX64">
                         <RemoteName>SteamFMX</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -400,24 +398,38 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="OSXARM64\Debug\SteamFMX.dSYM" Configuration="Debug" Class="ProjectOSXDebug">
-                    <Platform Name="OSXARM64">
-                        <RemoteName>SteamFMX</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
                 <DeployFile LocalName="OSXARM64\Debug\SteamFMX.entitlements" Configuration="Debug" Class="ProjectOSXEntitlements">
                     <Platform Name="OSXARM64">
+                        <Enabled>false</Enabled>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="OSXARM64\Debug\SteamFMX.info.plist" Configuration="Debug" Class="ProjectOSXInfoPList">
                     <Platform Name="OSXARM64">
+                        <Enabled>false</Enabled>
                         <RemoteName>Info.plist</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="OSXARM64\Debug\SteamFMX" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="OSXARM64">
+                        <Enabled>false</Enabled>
+                        <RemoteName>SteamFMX</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="OSXARM64\Release\SteamFMX.entitlements" Configuration="Release" Class="ProjectOSXEntitlements">
+                    <Platform Name="OSXARM64">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="OSXARM64\Release\SteamFMX.info.plist" Configuration="Release" Class="ProjectOSXInfoPList">
+                    <Platform Name="OSXARM64">
+                        <RemoteName>Info.plist</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="OSXARM64\Release\SteamFMX" Configuration="Release" Class="ProjectOutput">
                     <Platform Name="OSXARM64">
                         <RemoteName>SteamFMX</RemoteName>
                         <Overwrite>true</Overwrite>
@@ -449,13 +461,6 @@
                 </DeployFile>
                 <DeployFile LocalName="data\OSX\libsteam_api.dylib" Configuration="Debug" Class="File">
                     <Platform Name="OSX64">
-                        <RemoteDir>Contents\MacOS\</RemoteDir>
-                        <RemoteName>libsteam_api.dylib</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="data\OSX\libsteam_api.dylib" Configuration="Debug" Class="File">
-                    <Platform Name="OSXARM64">
                         <RemoteDir>Contents\MacOS\</RemoteDir>
                         <RemoteName>libsteam_api.dylib</RemoteName>
                         <Overwrite>true</Overwrite>
@@ -499,6 +504,34 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile LocalName="data\redistributable_live_bin\osx\libsteam_api.dylib" Configuration="Debug" Class="File">
+                    <Platform Name="OSXARM64">
+                        <RemoteDir>Contents\MacOS\</RemoteDir>
+                        <RemoteName>libsteam_api.dylib</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="data\redistributable_live_bin\osx\libsteam_api.dylib" Configuration="Release" Class="File">
+                    <Platform Name="OSXARM64">
+                        <RemoteDir>Contents\MacOS\</RemoteDir>
+                        <RemoteName>libsteam_api.dylib</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="data\redistributable_testing_bin\osx\libsteam_api_161.dylib" Configuration="Debug" Class="File">
+                    <Platform Name="OSXARM64">
+                        <RemoteDir>Contents\MacOS\</RemoteDir>
+                        <RemoteName>libsteam_api_161.dylib</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="data\redistributable_testing_bin\osx\libsteam_api_161.dylib" Configuration="Release" Class="File">
+                    <Platform Name="OSXARM64">
+                        <RemoteDir>Contents\MacOS\</RemoteDir>
+                        <RemoteName>libsteam_api_161.dylib</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="data\steam_appid.txt" Configuration="Debug" Class="File">
                     <Platform Name="Linux64">
                         <RemoteName>steam_appid.txt</RemoteName>
@@ -515,6 +548,7 @@
                 <DeployFile LocalName="data\steam_appid.txt" Configuration="Debug" Class="File">
                     <Platform Name="OSXARM64">
                         <RemoteDir>Contents\MacOS\</RemoteDir>
+                        <Enabled>false</Enabled>
                         <RemoteName>steam_appid.txt</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -560,18 +594,6 @@
                 <DeployFile LocalName="data\steam_appid.txt" Configuration="Release" Class="File">
                     <Platform Name="Win64">
                         <RemoteName>steam_appid.txt</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="steam\castleutils_delphi_compatibility.inc" Configuration="Debug" Class="ProjectFile">
-                    <Platform Name="OSXARM64">
-                        <RemoteDir>Contents\Resources\StartUp\</RemoteDir>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="steam\castleutils_delphi_compatibility.inc" Configuration="Debug" Class="ProjectFile">
-                    <Platform Name="Win32">
-                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

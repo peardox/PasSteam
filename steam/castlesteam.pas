@@ -206,7 +206,6 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     if SteamLibrary <> nil then
     begin
       // Initialize Steam API
-      {$define USE_TESTING_API}
       {$if defined(USE_TESTING_API)}
       if SteamAPI_InitFlat(Nil) = k_ESteamAPIInitResult_OK then
       {$else}
@@ -320,7 +319,7 @@ begin
   NumAchievements := SteamAPI_ISteamUserStats_GetNumAchievements(SteamUserStats);
   if NumAchievements > 0 then
     for I := 0 to NumAchievements - 1 do
-      FAchievements.Add(SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, I));
+      FAchievements.Add(String(SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, I)));
   WriteLnLog('Steam Achievements: %d', [Achievements.Count]);
 end;
 
@@ -340,7 +339,7 @@ begin
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AchievementId;
+    AchievementIdAnsi := AnsiString(AchievementId);
     if not SteamAPI_ISteamUserStats_SetAchievement(SteamUserStats, PAnsiChar(AchievementIdAnsi)) then
       SteamError('Failed to SteamAPI_ISteamUserStats_SetAchievement');
     StoreStats := true;
@@ -358,7 +357,7 @@ begin
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AchievementId;
+    AchievementIdAnsi := AnsiString(AchievementId);
     if SteamAPI_ISteamUserStats_GetAchievement(SteamUserStats,
         PAnsiChar(AchievementIdAnsi), @CAchieved) then
     begin
@@ -377,7 +376,7 @@ begin
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AchievementId;
+    AchievementIdAnsi := AnsiString(AchievementId);
     if not SteamAPI_ISteamUserStats_ClearAchievement(SteamUserStats, PAnsiChar(AchievementIdAnsi)) then
       SteamError('Failed to SteamAPI_ISteamUserStats_ClearAchievement');
     StoreStats := true;
@@ -408,7 +407,7 @@ begin
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AchievementId;
+    AchievementIdAnsi := AnsiString(AchievementId);
     if not SteamAPI_ISteamUserStats_IndicateAchievementProgress(SteamUserStats,
        PAnsiChar(AchievementIdAnsi), CurrentProgress, MaxProgress) then
       SteamError('Failed to SteamAPI_ISteamUserStats_IndicateAchievementProgress');
@@ -517,7 +516,7 @@ function TCastleSteam.Country: String;
 begin
   if not Enabled then
     Exit('');
-  Result := SteamAPI_ISteamUtils_GetIPCountry(SteamAPI_SteamUtils());
+  Result := String(SteamAPI_ISteamUtils_GetIPCountry(SteamAPI_SteamUtils()));
 end;
 
 function TCastleSteam.OverlayEnabled: Boolean;
@@ -559,7 +558,7 @@ function TCastleSteam.Language: String;
 begin
   if not Enabled then
     Exit('');
-  Result := SteamAPI_ISteamApps_GetCurrentGameLanguage(SteamAPI_SteamApps());
+  Result := String(SteamAPI_ISteamApps_GetCurrentGameLanguage(SteamAPI_SteamApps()));
 end;
 
 end.

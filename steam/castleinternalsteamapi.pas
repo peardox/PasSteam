@@ -50,17 +50,15 @@
   APIs far simpler as when defined an exception may be raised when
   loading the library. The 'testing' library should be renamed to
   include it's version as a suffix e.g. steam_api64.dll would be
-  renamed to steam_api64_161.dll and LIBVER, below, set to the matching
+  renamed to steam_api64_161.dll and STEAMLIBVER, below, set to the matching
   suffix.
 
   After successful testing the constants below should all be the same
   until a new API upgrade is required - essentially making the define = !define
-  and LIBVER should be an empty string ('')
+  and STEAMLIBVER should be an empty string ('')
 
   II SHOULD NORMALLY NOT BE DEFINED - note also in CastleSteam while testing
 }
-
- {$define USE_TESTING_API}
 
 unit CastleInternalSteamApi;
 
@@ -118,15 +116,14 @@ const
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION013'; //< isteamuserstats.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  LIBVER = '_161';
+  STEAMLIBVER = '_161';
 {$else}
   STEAMCLIENT_INTERFACE_VERSION = 'SteamClient020'; //< isteamclient.h
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION012'; //< isteamuserstats.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  LIBVER = '';
-//  LIBVER = '_157';
+  STEAMLIBVER = '';
 {$endif}
 
 type
@@ -329,15 +326,13 @@ var
 const
   SteamLibraryName =
     {$if defined(DARWIN)} // macOS
-    'libsteam_api.dylib'
-    {$elseif not defined(FPC) and defined(MACOS)}
-    'libsteam_api.dylib'
+    'libsteam_api' + STEAMLIBVER + '.dylib'
     {$elseif defined(UNIX)}
-    'libsteam_api.so'
+    'libsteam_api' + STEAMLIBVER + '.so'
     {$elseif defined(MSWINDOWS) and defined(CPUX64)}
-    'steam_api64' + LIBVER + '.dll'
+    'steam_api64' + STEAMLIBVER + '.dll'
     {$elseif defined(MSWINDOWS) and defined(CPUX86)}
-    'steam_api' + LIBVER + '.dll'
+    'steam_api' + STEAMLIBVER + '.dll'
     {$else}
     // Steam library not available on this platform
     ''

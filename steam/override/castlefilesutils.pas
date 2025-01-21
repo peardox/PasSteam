@@ -1,13 +1,13 @@
-unit delphisteam;
+unit castlefilesutils;
 
 interface
 
-uses
-  {$IFDEF MACOS}Macapi.CoreFoundation, {$ENDIF}
-  castlelog, castleutils
-;
+{$IFDEF MACOS}{$define DARWIN}{$ENDIF}
 
-{$ifdef MACOS}
+uses {$IFDEF MACOS}Macapi.CoreFoundation, {$ENDIF}{$ifdef fpc}MacOSAll, {$endif}
+  SysUtils, CastleLog;
+
+{$if defined(darwin)}
 var
   BundlePathCached: Boolean;
   BundlePathCache: string;
@@ -15,11 +15,23 @@ var
 { Main directory of the current macOS bundle, including final slash.
   Empty string if we're not run from a bundle. }
 function BundlePath: string;
-{$endif MACOS}
+
+function InclPathDelim(const s: string): string;
+
+{$endif}
 
 implementation
+{$if defined(darwin)}
+function InclPathDelim(const s: string): string;
+begin
+  {$if defined(MSWINDOWS) and not defined(FPC)}
+  { On Windows, also accept / as final path delimiter.
+    FPC does it automatically. }
+  if (S <> '') and (S[Length(S)] = '/') then Exit(S);
+  {$endif}
+  Result := IncludeTrailingPathDelimiter(S);
+end;
 
-{$ifdef MACOS}
 function BundlePath: string;
 { Based on
   http://wiki.freepascal.org/OS_X_Programming_Tips#How_to_obtain_the_path_to_the_Bundle }
@@ -43,7 +55,7 @@ begin
       CFStringGetPascalString(pathCFStr, @pathStr, 255, CFStringGetSystemEncoding());
       CFRelease(pathRef);
       CFRelease(pathCFStr);
-      BundlePathCache := pathStr;
+      BundlePathCache := String(pathStr);
       {$ifdef FPC}
       BundlePathCache := InclPathDelim(BundlePathCache);
       {$else}
@@ -54,7 +66,7 @@ begin
   end;
   Result := BundlePathCache;
 end;
-{$endif MACOS}
+{$endif}
 
 end.
 

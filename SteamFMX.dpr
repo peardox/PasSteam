@@ -7,14 +7,13 @@ uses
   castlesteam in 'steam\castlesteam.pas',
   castleinternalsteamapi in 'steam\castleinternalsteamapi.pas',
   castledynlib in 'steam\castledynlib.pas',
-  castleutils in 'steam\castleutils.pas',
-  castlefilesutils in 'override\castlefilesutils.pas',
-  castlestringutils in 'override\castlestringutils.pas',
-  castleapplicationproperties in 'override\castleapplicationproperties.pas',
   SteamApp.fmx in 'component\SteamApp.fmx.pas',
-  delphisteam in 'override\delphisteam.pas',
   ctypes in 'steam\delphi\ctypes.pas',
-  castlelog in 'override\castlelog.pas';
+  castleapplicationproperties in 'steam\override\castleapplicationproperties.pas',
+  castlefilesutils in 'steam\override\castlefilesutils.pas',
+  castlelog in 'steam\override\castlelog.pas',
+  castlestringutils in 'steam\override\castlestringutils.pas',
+  castleutils in 'steam\override\castleutils.pas';
 
 {$R *.res}
 

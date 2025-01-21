@@ -10,6 +10,15 @@
         <DeviceId Condition="'$(Platform)'=='iOSSimARM64'"/>
     </PropertyGroup>
     <ItemGroup Condition="'$(Platform)'=='OSX64'">
+        <DeployFile Include="OSX64\Debug\SteamFMX.dSYM" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>SteamFMX.app\..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
+            <RemoteName>SteamFMX</RemoteName>
+            <DeployClass>ProjectOSXDebug</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
         <DeployFile Include="data\OSX\libsteam_api.dylib" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SteamFMX.app\Contents\MacOS\</RemoteDir>
             <RemoteName>libsteam_api.dylib</RemoteName>
@@ -192,15 +201,6 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="data\redistributable_live_bin\osx\libsteam_api.dylib" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SteamFMX.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>libsteam_api.dylib</RemoteName>
-            <DeployClass>File</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
         <DeployFile Include="data\steam_appid.txt" Condition="'$(Config)'=='Release'">
             <RemoteDir>SteamFMX.app\Contents\MacOS\</RemoteDir>
             <RemoteName>steam_appid.txt</RemoteName>
@@ -210,33 +210,14 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="$(BDS)\bin\delphi_PROJECTICNS.icns" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SteamFMX.app\Contents\Resources\</RemoteDir>
-            <RemoteName>SteamFMX.icns</RemoteName>
-            <DeployClass>ProjectOSXResource</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
-        <DeployFile Include="OSXARM64\Release\SteamFMX.info.plist" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SteamFMX.app\Contents\</RemoteDir>
-            <RemoteName>Info.plist</RemoteName>
-            <DeployClass>ProjectOSXInfoPList</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
-        <DeployFile Include="OSXARM64\Release\SteamFMX" Condition="'$(Config)'=='Release'">
+        <DeployFile Include="data\redistributable_live_bin\osx\libsteam_api.dylib" Condition="'$(Config)'=='Release'">
             <RemoteDir>SteamFMX.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>SteamFMX</RemoteName>
-            <DeployClass>ProjectOutput</DeployClass>
-            <Operation>1</Operation>
+            <RemoteName>libsteam_api.dylib</RemoteName>
+            <DeployClass>File</DeployClass>
+            <Operation>0</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
-            <Required>True</Required>
         </DeployFile>
         <DeployFile Include="data\redistributable_testing_bin\osx\libsteam_api_161.dylib" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SteamFMX.app\Contents\MacOS\</RemoteDir>
@@ -252,15 +233,6 @@
             <RemoteName>libsteam_api_161.dylib</RemoteName>
             <DeployClass>File</DeployClass>
             <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
-        <DeployFile Include="OSXARM64\Release\SteamFMX.entitlements" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SteamFMX.app\..\</RemoteDir>
-            <RemoteName>SteamFMX.entitlements</RemoteName>
-            <DeployClass>ProjectOSXEntitlements</DeployClass>
-            <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
