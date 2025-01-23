@@ -128,7 +128,7 @@ object Form1: TForm1
       object ListBox1: TListBox
         Align = Client
         Size.Width = 640.000000000000000000
-        Size.Height = 437.000000000000000000
+        Size.Height = 284.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 4
         DisableFocusEffect = True
@@ -137,7 +137,24 @@ object Form1: TForm1
         DefaultItemStyles.GroupHeaderStyle = ''
         DefaultItemStyles.GroupFooterStyle = ''
         Viewport.Width = 636.000000000000000000
-        Viewport.Height = 433.000000000000000000
+        Viewport.Height = 280.000000000000000000
+      end
+      object Layout1: TLayout
+        Align = Top
+        Size.Width = 640.000000000000000000
+        Size.Height = 153.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 5
+        object Image2: TImage
+          MultiResBitmap = <
+            item
+            end>
+          Position.X = 504.000000000000000000
+          Position.Y = 16.000000000000000000
+          Size.Width = 128.000000000000000000
+          Size.Height = 129.000000000000000000
+          Size.PlatformDefault = False
+        end
       end
     end
     object TabItem2: TTabItem

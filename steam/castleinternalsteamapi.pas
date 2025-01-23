@@ -86,6 +86,7 @@ type
   { It's a struct in C headers but can be passed as UInt64,
     defined in C headers with explicit ability to be typecasted as 64-bit int. }
   CGameID = UInt64;
+  CUserID = UInt64;
   EResult = UInt32;
   TAppId = UInt32;
   PSteamErrMsg = PChar;
@@ -114,8 +115,11 @@ const
   STEAMCLIENT_INTERFACE_VERSION = 'SteamClient021'; //< isteamclient.h
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION013'; //< isteamuserstats.h
+  STEAMFRIENDS_INTERFACE_VERSION = 'SteamFriends017'; //< isteamuserstats.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamUser = '023'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamFriends = '017'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   STEAMLIBVER = '_161';
 {$else}
   STEAMCLIENT_INTERFACE_VERSION = 'SteamClient020'; //< isteamclient.h
@@ -195,7 +199,14 @@ const
 
   k_uAPICallInvalid = TSteamAPICall(0);
 
+  k_cchLeaderboardNameMax = 128;
+  k_cchStatNameMax = 128;
+  k_cLeaderboardDetailsMax = 64;
+
 type
+  TStatName = Array [0..(k_cchStatNameMax - 1)] of AnsiChar;
+  PStatName = ^TStatName;
+
   TSteamAPIInitResult = (	k_ESteamAPIInitResult_OK = 0, // Success
     k_ESteamAPIInitResult_FailedGeneric = 1, // Some other failure
     k_ESteamAPIInitResult_NoSteamClient = 2, // We cannot connect to Steam, steam probably isn't running
@@ -228,10 +239,30 @@ type
   end;
   PUserStatsReceived = ^TUserStatsReceived;
 
+  // Purpose: called when the latests stats and achievements have been received
+  // from the server
+  TUserAchievementIconFetched = record
+  const
+    k_iCallback = k_iSteamUserStatsCallbacks + 9;
+  var
+    // The Game ID this achievement is for.
+    GameID: CGameID;
+    // The name of the achievement that this callback is for.
+    AchievementName: PStatName;
+    // Returns whether the icon for the achieved (true) or unachieved (false) version.
+    AchievedIcon: TSteamBool;
+    // Handle to the image, which can be used with ISteamUtils::GetImageRGBA to get the image data.
+    // 0 means no image is set for the achievement.
+    ImageHandle: Int32;
+  end;
+  PUserAchievementIconFetched = ^TUserAchievementIconFetched;
+
   // Pointer to ISteamApps interface from Steam API.
   // For our translation, this is just a pointer to an opaque structure.
   // Defined as a record to be incompatible with e.g. ISteamUtils.
   ISteamApps = record Ptr: Pointer; end;
+  ISteamFriends = record Ptr: Pointer; end;
+  ISteamUser = record Ptr: Pointer; end;
 
   // Pointer to ISteamUtils interface from Steam API.
   ISteamUtils = record Ptr: Pointer; end;
@@ -267,6 +298,7 @@ var
   SteamAPI_ISteamClient_SetWarningMessageHook: procedure (SteamClient: Pointer; WarningMessageHook: SteamAPIWarningMessageHook); CDecl;
   SteamAPI_ISteamClient_GetISteamUser: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserInterfaceVersion: PAnsiChar): Pointer; CDecl;
   SteamAPI_ISteamClient_GetISteamUserStats: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamFriends: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
 
   // ISteamUserStats
   {$if not defined(USE_TESTING_API)}
@@ -296,6 +328,12 @@ var
   // Unversioned accessor to get the current version.
   // In Pascal translation, this is just an alias to 'SteamAPI_SteamUtils_v' + VersionSteamUtils.
   SteamAPI_SteamUtils: function (): ISteamUtils; CDecl;
+  // Returns the Raw Bitmap Data in pubDest of image Handle iImage. Must call GetImageSize
+  // before calling thius in order to allocate memory for buffer that will be filled
+  // the destination buffer size should be 4 * height * width * sizeof(char)
+  SteamAPI_ISteamUtils_GetImageRGBA: function (Self: ISteamUtils; iImage: CInt; pubDest: PByte; nDestBufferSize: Int32): TSteamBool; CDecl;
+  // Returns the Width + Height of image Handle iImage - bust be called bnefore GetImageRGBA
+  SteamAPI_ISteamUtils_GetImageSize: function (Self: ISteamUtils; iImage: CInt; pnWidth: PUInt32; pnHeight: PUInt32): TSteamBool; CDecl;
   // returns the 2 digit ISO 3166-1-alpha-2 format country code this client
   // is running in (as looked up via an IP-to-location database) e.g "US" or "UK".
   SteamAPI_ISteamUtils_GetIPCountry: function (Self: ISteamUtils): PAnsiChar; CDecl;
@@ -309,7 +347,7 @@ var
 
   // ISteamApps
   // A versioned accessor is exported by the library
-  //SteamAPI_SteamApps_v<VersionSteamApps>: function (): ISteamApps; CDecl;
+  // SteamAPI_SteamApps_v<VersionSteamApps>: function (): ISteamApps; CDecl;
   // Unversioned accessor to get the current version.
   // In Pascal translation, this is just an alias to 'SteamAPI_SteamApps_v' + VersionSteamApps.
   SteamAPI_SteamApps: function (): ISteamApps; CDecl;
@@ -319,6 +357,19 @@ var
   SteamAPI_ISteamApps_BIsDlcInstalled: function (Self: ISteamApps; AppID: TAppId): TSteamBool; CDecl;
   // returns the current game language
   SteamAPI_ISteamApps_GetCurrentGameLanguage: function (Self: ISteamApps): PAnsiChar; CDecl;
+
+  // ISteamFriends
+  // A versioned accessor is exported by the library
+  // SteamAPI_SteamFriends_v<VersionSteamFriends>: function (): ISteamFriends; CDecl;
+  // Unversioned accessor to get the current version.
+  // In Pascal translation, this is just an alias to 'SteamAPI_SteamFriends_v' + VersionSteamApps.
+  SteamAPI_SteamFriends: function (): ISteamFriends; CDecl;
+  SteamAPI_ISteamFriends_GetLargeFriendAvatar: function (Self: Pointer; steamIDFriend: CUserID): CInt; CDecl;
+  SteamAPI_ISteamFriends_GetMediumFriendAvatar: function (Self: Pointer; steamIDFriend: CUserID): CInt; CDecl;
+  SteamAPI_ISteamFriends_GetSmallFriendAvatar: function (Self: Pointer; steamIDFriend: CUserID): CInt; CDecl;
+
+  SteamAPI_SteamUser: function (): ISteamUser; CDecl;
+  SteamAPI_ISteamUser_GetSteamID: function (Self: Pointer): CUserID; CDecl;
 
 var
   SteamLibrary: TDynLib;
@@ -370,6 +421,7 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := nil;
   {$if not defined(USE_TESTING_API)}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := nil;
   {$endif}
@@ -384,6 +436,8 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamUtils) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageRGBA) := Nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageSize) := Nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetIPCountry) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_IsOverlayEnabled) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_IsSteamRunningInVR) := nil;
@@ -392,6 +446,14 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamApps_GetAppBuildId) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamApps_BIsDlcInstalled) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamApps_GetCurrentGameLanguage) := nil;
+
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamUser) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUser_GetSteamID) := nil;
+
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamFriends) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetLargeFriendAvatar) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetMediumFriendAvatar) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetSmallFriendAvatar) := nil;
 
   FreeAndNil(SteamLibrary);
 end;
@@ -427,6 +489,7 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := SteamLibrary.Symbol('SteamAPI_ISteamClient_SetWarningMessageHook');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUser');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUserStats');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamFriends');
     {$if not defined(USE_TESTING_API)}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
     {$endif}
@@ -442,6 +505,8 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_StoreStats');
     // alias to versioned entry point
     Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamUtils) := SteamLibrary.Symbol('SteamAPI_SteamUtils_v' + VersionSteamUtils);
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageRGBA) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_GetImageRGBA');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageSize) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_GetImageSize');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetIPCountry) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_GetIPCountry');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_IsOverlayEnabled) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_IsOverlayEnabled');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_IsSteamRunningInVR) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_IsSteamRunningInVR');
@@ -451,6 +516,14 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamApps_GetAppBuildId) := SteamLibrary.Symbol('SteamAPI_ISteamApps_GetAppBuildId');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamApps_BIsDlcInstalled) := SteamLibrary.Symbol('SteamAPI_ISteamApps_BIsDlcInstalled');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamApps_GetCurrentGameLanguage) := SteamLibrary.Symbol('SteamAPI_ISteamApps_GetCurrentGameLanguage');
+    // alias to versioned entry point
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamUser) := SteamLibrary.Symbol('SteamAPI_SteamUser_v' + VersionSteamUser);
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUser_GetSteamID) := SteamLibrary.Symbol('SteamAPI_ISteamUser_GetSteamID');
+    // alias to versioned entry point
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamFriends) := SteamLibrary.Symbol('SteamAPI_SteamFriends_v' + VersionSteamFriends);
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetLargeFriendAvatar) := SteamLibrary.Symbol('SteamAPI_ISteamFriends_GetLargeFriendAvatar');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetMediumFriendAvatar) := SteamLibrary.Symbol('SteamAPI_ISteamFriends_GetMediumFriendAvatar');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetSmallFriendAvatar) := SteamLibrary.Symbol('SteamAPI_ISteamFriends_GetSmallFriendAvatar');
   end;
 end;
 

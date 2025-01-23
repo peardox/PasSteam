@@ -22,15 +22,38 @@ unit CastleSteam;
 
 interface
 
-uses Classes,
+uses Classes, CTypes, SysUtils,
   {$ifndef fpc}System.Generics.Collections,{$endif}
   CastleInternalSteamApi;
 
 type
   TAppId = CastleInternalSteamApi.TAppId;
 
+  TIconSize = (IconSmall, IconMedium, IconLarge);
+
+  TSteamBitmap = class
+  strict private
+    FIsValid: Boolean;
+    FWidth: Integer;
+    FHeight: Integer;
+    FBPP: Integer;
+    FImage: PByteArray;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure SetImageFormat(const ImWidth, ImHeight, BytesPerPixel: Integer);
+    function GetImageMemorySize(): UInt64;
+    procedure SetImage(const AImage: PByteArray);
+    property IsValid: Boolean read FIsValid write FIsValid;
+    property Width: Integer read FWidth;
+    property Height: Integer read FHeight;
+    property BPP: Integer read FBPP;
+    property Image: PByteArray read FImage;
+  end;
+
   TSteamAchievement = Class
     strict private
+      FAchId: UInt32;
       FApiId: String;
       FName: String;
       FDesc: String;
@@ -43,6 +66,7 @@ type
     protected
       procedure Populate(SteamUserStats: Pointer; AchievementId: UInt32);
     public
+      procedure GetIcon(SteamUserStats: Pointer; AchievementId: UInt32);
       constructor Create;
       property ApiId: String read FApiId;
       property Name: String read FName;
@@ -65,16 +89,19 @@ type
   strict private
     FAppId: TAppId;
     FEnabled: Boolean;
+    FUserID: CUserID;
     FAchievements: TSteamAchievementList;
     FUserStatsReceived: Boolean;
     FOnUserStatsReceived: TNotifyEvent;
     StoreStats: Boolean;
     SteamClient: Pointer;
-    //SteamUser: Pointer; // We aren't using it right now, but it works
+    SteamUser: Pointer;
     SteamUserStats: Pointer;
+    SteamFriends: Pointer;
     SteamUserHandle: HSteamUser;
     SteamPipeHandle: HSteamPipe;
     procedure CallbackUserStatsReceived(P: PUserStatsReceived);
+    procedure CallbackUserAchievementIconFetched(P: PUserAchievementIconFetched);
     procedure GetAchievements;
     { Makes a warning.
 
@@ -89,7 +116,13 @@ type
       According to SteamWorks documentation you should run this
       at least 10 times a second, better if every frame. }
     procedure Update(Sender: TObject);
+    { Callback may be set after event is available so trigger it if ready
+      As of 1.61 Stats are no longer async so this callback would not happen
+      without this setter }
+    procedure SetOnUserStatsReceived(const AValue: TNotifyEvent);
   public
+    function GetFriendImage(const FriendID: CUserID; const Size: TIconSize = IconLarge): TSteamBitmap;
+    function GetSteamBitmap(const ImageHandle: CSteamID): TSteamBitmap;
     { Connect to Steam and initialize everything.
 
       @orderedList(
@@ -139,13 +172,16 @@ type
       (like achievements) don't do anything. }
     property UserStatsReceived: Boolean read FUserStatsReceived;
 
+    { The currently logged in Steam User's ID }
+    property UserId: CUserID read FUserId;
+
     { We have received user stats from Steam.
       Right before calling this event, @link(UserStatsReceived) changed to @true
       and @link(Achievements) have been filled with achievement names.
       From now on you can use Steam features that depend on it,
       like @link(Achievements). }
     property OnUserStatsReceived: TNotifyEvent
-      read FOnUserStatsReceived write FOnUserStatsReceived;
+      read FOnUserStatsReceived write SetOnUserStatsReceived;
 
     { Set achievement as "achieved",
       Steam will automatically show a small overlay indicating that the
@@ -206,7 +242,7 @@ type
 
 implementation
 
-uses SysUtils, CTypes, DateUtils,
+uses DateUtils,
   CastleLog, CastleUtils, CastleApplicationProperties;
 
 procedure WarningHook(nSeverity: Integer; pchDebugText: PAnsiChar); Cdecl;
@@ -238,6 +274,11 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
       if SteamAPI_Init() then
       {$endif}
       begin
+        {$if defined(USE_TESTING_API)}
+        WriteLnLog('SteamAPI with USE_TESTING_API using ' + SteamLibraryName);
+        {$else}
+        WriteLnLog('SteamAPI using ' + SteamLibraryName);
+        {$endif}
         WriteLnLog('SteamAPI_Init successful');
 
         // If the app was started through EXE - restart the game through Steam
@@ -276,9 +317,18 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     SteamUserHandle := SteamAPI_GetHSteamUser();
     SteamPipeHandle := SteamAPI_GetHSteamPipe();
 
-    // Not used yet
-    // SteamUser := SteamAPI_ISteamClient_GetISteamUser(
-    //   SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
+    // Init SteamUser
+    SteamUser := SteamAPI_ISteamClient_GetISteamUser(
+       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
+
+    // Init SteamFriends
+    SteamFriends := SteamAPI_ISteamClient_GetISteamFriends(
+      SteamClient, SteamUserHandle, SteamPipeHandle, STEAMFRIENDS_INTERFACE_VERSION);
+
+    // Init SteamUtls
+//    SteamUtils := SteamAPI_ISteamClient_GetISteamUtils(
+//       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUTILS_INTERFACE_VERSION);
+
 
     // Init SteamUserStats and request UserStats (will wait for callback, handled in Update)
     SteamUserStats := SteamAPI_ISteamClient_GetISteamUserStats(
@@ -292,6 +342,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
         GetAchievements;
         if Assigned(OnUserStatsReceived) then
           OnUserStatsReceived(Self);
+        FUserId := SteamAPI_ISteamUser_GetSteamID(SteamUser);
       end;
     {$endif}
 
@@ -322,6 +373,18 @@ begin
   inherited;
 end;
 
+procedure TCastleSteam.CallbackUserAchievementIconFetched(
+  P: PUserAchievementIconFetched);
+begin
+  if (P^).ImageHandle = 0 then
+    begin
+      WriteLnLog('Steam', 'No Icon Available');
+      Exit;
+    end;
+
+    WriteLnLog('Steam', 'Fetched UserAchievementIcon from Steam');
+end;
+
 procedure TCastleSteam.CallbackUserStatsReceived(P: PUserStatsReceived);
 begin
   WriteLnLog('Steam', 'Received UserStats from Steam');
@@ -336,7 +399,6 @@ var
   NumAchievements: UInt32;
   I: Integer;
   SteamAchievement: TSteamAchievement;
-  pchName : PAnsiChar;
 begin
   if not Enabled then
     Exit;
@@ -352,6 +414,60 @@ begin
         FAchievements.Add(SteamAchievement);
       end;
   WriteLnLog('Steam Achievements: %d', [Achievements.Count]);
+end;
+
+function TCastleSteam.GetSteamBitmap(const ImageHandle: CSteamID): TSteamBitmap;
+var
+  ImWidth, ImHeight: Integer;
+  R: TSteamBool;
+  Buf: Pointer;
+  BufSize: Integer;
+begin
+  Result := TSteamBitmap.Create;
+
+  R := SteamAPI_ISteamUtils_GetImageSize(SteamAPI_SteamUtils(), ImageHandle, @ImWidth, @ImHeight);
+  if R then
+    begin
+      WriteLnLog('Steam', 'GetImageSize : Width : %d, Height : %d', [ImWidth, ImHeight]);
+      Result.SetImageFormat(ImWidth, ImHeight, 4);
+      try
+        BufSize := Result.GetImageMemorySize;
+        Buf := GetMem(BufSize);
+        if SteamAPI_ISteamUtils_GetImageRGBA(SteamAPI_SteamUtils(), ImageHandle, Buf, BufSize) then
+          begin
+            Result.SetImage(Buf);
+            Result.IsValid := True;
+          end;
+      finally
+      end;
+    end
+  else
+    WriteLnLog('Steam', 'GetImageSize Failed');
+
+
+end;
+
+function TCastleSteam.GetFriendImage(const FriendID: CUserID; const Size: TIconSize): TSteamBitmap;
+var
+  Avatar: Integer;
+begin
+  Result := nil;
+
+  case Size of
+    IconSmall:
+      Avatar := SteamAPI_ISteamFriends_GetSmallFriendAvatar(SteamFriends, FriendID);
+    IconMedium:
+      Avatar := SteamAPI_ISteamFriends_GetMediumFriendAvatar(SteamFriends, FriendID);
+    IconLarge:
+      Avatar := SteamAPI_ISteamFriends_GetLargeFriendAvatar(SteamFriends, FriendID);
+  else
+    Avatar := 0;
+  end;
+
+  if Avatar <> 0 then
+    begin
+      Result := GetSteamBitmap(Avatar);
+    end;
 end;
 
 procedure TCastleSteam.SteamError(const ErrorMsg: String);
@@ -376,6 +492,13 @@ begin
     StoreStats := true;
   end else
     SteamError('SetAchievement failed. ' + SUserStatsNotReceived);
+end;
+
+procedure TCastleSteam.SetOnUserStatsReceived(const AValue: TNotifyEvent);
+begin
+  FOnUserStatsReceived := AValue;
+  if Assigned(FOnUserStatsReceived) and FUserStatsReceived then
+    FOnUserStatsReceived(Self);
 end;
 
 function TCastleSteam.GetAchievement(const AchievementId: String): Boolean;
@@ -474,6 +597,7 @@ procedure TCastleSteam.Update(Sender: TObject);
     begin
       // Look at callback.m_iCallback to see what kind of callback it is,
       // and dispatch to appropriate handler(s)
+      WritelnWarning('Steam', 'Got Callback : ' + IntToStr(Callback.m_iCallback));
       case Callback.m_iCallback of
         TSteamAPICallCompleted.k_iCallback:
           begin
@@ -507,10 +631,17 @@ procedure TCastleSteam.Update(Sender: TObject);
           end;
         TUserStatsReceived.k_iCallback:
           begin
-       //     {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
-            WritelnLog('Got Stats');
-       //     {$endif}
+            {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
+            WritelnLog('Steam', 'Handle Stats Received (m_iCallback : %d)', [Callback.m_iCallback]);
+            {$endif}
             CallbackUserStatsReceived(PUserStatsReceived(Callback.m_pubParam));
+          end;
+        TUserAchievementIconFetched.k_iCallback:
+          begin
+            {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
+            WritelnLog('Steam', 'Icon Handle Received (m_iCallback : %d)', [Callback.m_iCallback]);
+            {$endif}
+            CallbackUserAchievementIconFetched(PUserAchievementIconFetched(Callback.m_pubParam));
           end;
         else
           begin
@@ -592,7 +723,17 @@ end;
 
 constructor TSteamAchievement.Create;
 begin
-  Inherited;
+  Inherited Create;
+end;
+
+procedure TSteamAchievement.GetIcon(SteamUserStats: Pointer; AchievementId: UInt32);
+var
+  pchName: PAnsiChar;
+begin
+  WritelnLog('Trying GetAchievementIcon { 1109 }');
+  pchName := SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, FAchId);
+  SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, pchName);
+//  SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, PAnsiChar(AnsiString(FApiId)));
 end;
 
 procedure TSteamAchievement.Populate(SteamUserStats: Pointer; AchievementId: UInt32);
@@ -602,6 +743,7 @@ var
   bDone: TSteamBool;
   uDate: UInt32;
 begin
+  FAchId := AchievementId;
   pchName := SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, AchievementId);
   FApiId := String(pchName);
   FName := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'name'));
@@ -614,6 +756,43 @@ begin
   SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(SteamUserStats, pchName, @bDone, @uDate);
   FDone := bDone;
   FDoneDate := UnixToDateTime(uDate);
+
+  if AchievementId = 2 then
+    begin
+      GetIcon(SteamUserStats, AchievementId);
+    end;
+
+end;
+
+{ TSteamBitmap }
+
+constructor TSteamBitmap.Create;
+begin
+
+end;
+
+destructor TSteamBitmap.Destroy;
+begin
+  if Assigned(FImage) then
+    FreeMem(Fimage);
+  inherited;
+end;
+
+function TSteamBitmap.GetImageMemorySize: UInt64;
+begin
+  Result := FWidth * FHeight * FBPP;
+end;
+
+procedure TSteamBitmap.SetImage(const AImage: PByteArray);
+begin
+  FImage := AImage;
+end;
+
+procedure TSteamBitmap.SetImageFormat(const ImWidth, ImHeight, BytesPerPixel: Integer);
+begin
+  FWidth := ImWidth;
+  FHeight := ImHeight;
+  FBPP := BytesPerPixel;
 end;
 
 end.

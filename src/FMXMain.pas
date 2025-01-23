@@ -20,11 +20,15 @@ type
     TabItem2: TTabItem;
     Memo1: TMemo;
     Image1: TImage;
+    Layout1: TLayout;
+    Image2: TImage;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
     procedure AppUpdate(Sender: TObject);
   private
     { Private declarations }
+    FAvatar: TBitmap;
+    UpCall: Integer;
   public
     { Public declarations }
   end;
@@ -34,7 +38,7 @@ var
   Steam: TSteamApp;
 
 const
-  AppId: Integer = 316790;
+  AppId: Integer = 2275430; //316790; {BG - 228280}  {}
 
 implementation
 
@@ -48,21 +52,18 @@ begin
   if Assigned(Steam) then
     begin
       AchievementCount := Steam.Achievements.Count;
-      Label1.Text := 'Steam - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available - Update : ' + IntToStr(Steam.UpdateCount);
+      Label1.Text := 'Steam (' + Steam.Country + ') - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available - Update : ' + IntToStr(Steam.UpdateCount);
     end;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   OutLog := Memo1.Lines;
+  Label1.Text := 'Steam - Not Loaded';
   Steam := TSteamApp.Create(AppId);
-  Steam.Interval := 17;
+  Steam.Interval := 17; // 60 calls per second
   Steam.OnUserStatsReceived := UserStatsReceived;
-  Steam.OnAppUpdate := UserStatsReceived;
-  if Steam.Enabled then
-    Label1.Text := 'Steam loaded'
-  else
-    Label1.Text := 'Steam not loaded';
+  Steam.OnAppUpdate := AppUpdate;
 end;
 
 procedure TForm1.UserStatsReceived(Sender: TObject);
@@ -72,7 +73,10 @@ var
 begin
   if Assigned(Steam) then
     begin
+      Image2.Bitmap := Steam.Avatar;
+      Inc(UpCall);
       ListBox1.BeginUpdate;
+      ListBox1.Items.Clear;
       for I := 0 to Steam.Achievements.Count - 1 do
         begin
           Item := TListBoxItem.Create(nil);

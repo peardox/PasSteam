@@ -33,7 +33,8 @@ end;
 
 procedure WritelnLog(const Category: string; const Message: string);
 begin
-
+  if Assigned(OutLog) then
+    OutLog.Add(Category + ' : ' + Message);
 end;
 
 procedure WritelnLog(const Message: string);
@@ -55,7 +56,8 @@ end;
 
 procedure WritelnLog(const MessageBase: string; const Args: array of const);
 begin
-
+  if Assigned(OutLog) then
+    OutLog.Add(FormatDot(MessageBase, Args));
 end;
 
 procedure WritelnWarning(const Category: string; const Message: string);
@@ -66,17 +68,20 @@ end;
 
 procedure WritelnWarning(const Message: string);
 begin
-
+  if Assigned(OutLog) then
+    OutLog.Add(Message);
 end;
 
 procedure WritelnWarning(const Category: string; const MessageBase: string; const Args: array of const);
 begin
-
+  if Assigned(OutLog) then
+    OutLog.Add(Category + ' : ' + FormatDot(MessageBase, Args));
 end;
 
 procedure WritelnWarning(const MessageBase: string; const Args: array of const);
 begin
-
+  if Assigned(OutLog) then
+    OutLog.Add(FormatDot(MessageBase, Args));
 end;
 
 end.
