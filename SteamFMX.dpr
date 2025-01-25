@@ -3,7 +3,6 @@ program SteamFMX;
 uses
   System.StartUpCopy,
   FMX.Forms,
-  FMX.Skia,
   FMXMain in 'src\FMXMain.pas' {Form1},
   castlesteam in 'steam\castlesteam.pas',
   castleinternalsteamapi in 'steam\castleinternalsteamapi.pas',
@@ -19,7 +18,7 @@ uses
 {$R *.res}
 
 begin
-  GlobalUseSkia := True;
+  ReportMemoryLeaksOnShutdown := True;
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
   Application.Run;

@@ -250,7 +250,7 @@ type
     // The name of the achievement that this callback is for.
     AchievementName: PStatName;
     // Returns whether the icon for the achieved (true) or unachieved (false) version.
-    AchievedIcon: TSteamBool;
+    AchievedIconState: TSteamBool;
     // Handle to the image, which can be used with ISteamUtils::GetImageRGBA to get the image data.
     // 0 means no image is set for the achievement.
     ImageHandle: Int32;
@@ -309,13 +309,13 @@ var
   SteamAPI_ISteamUserStats_SetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_ClearAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_GetNumAchievements: function (SteamUserStats: Pointer): UInt32; CDecl;
-  // It returns string-ID of the achievement, not a human readable name
+  // Returns string-ID of the achievement, not a human readable name
   SteamAPI_ISteamUserStats_GetAchievementName: function (SteamUserStats: Pointer; AchievementId: UInt32 ): PAnsiChar; CDecl;
-  // It returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
+  // Returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
   SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const AchievementKey: PAnsiChar ): PAnsiChar; CDecl;
-  // It returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
+  // Returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
   SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: PUInt32): TSteamBool; CDecl;
-  // It returns a handle for the Achievement's image - needs further processing via callback
+  // Returns a handle for the Achievement's image - needs further processing via callback
   SteamAPI_ISteamUserStats_GetAchievementIcon: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): UInt32; CDecl;
   // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress
   SteamAPI_ISteamUserStats_IndicateAchievementProgress: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; CurrentProgress: UInt32; MaxProgress: UInt32): TSteamBool; CDecl;
@@ -324,7 +324,7 @@ var
 
   // ISteamUtils
   // A versioned accessor is exported by the library
-  //SteamAPI_SteamUtils_v<VersionSteamUtils>: function (): ISteamUtils; CDecl;
+  // SteamAPI_SteamUtils_v<VersionSteamUtils>: function (): ISteamUtils; CDecl;
   // Unversioned accessor to get the current version.
   // In Pascal translation, this is just an alias to 'SteamAPI_SteamUtils_v' + VersionSteamUtils.
   SteamAPI_SteamUtils: function (): ISteamUtils; CDecl;
@@ -364,11 +364,17 @@ var
   // Unversioned accessor to get the current version.
   // In Pascal translation, this is just an alias to 'SteamAPI_SteamFriends_v' + VersionSteamApps.
   SteamAPI_SteamFriends: function (): ISteamFriends; CDecl;
+  // Returns Handle to Large Friend Avatar Image for use with SteamAPI_ISteamUtils_GetImageRGBA
   SteamAPI_ISteamFriends_GetLargeFriendAvatar: function (Self: Pointer; steamIDFriend: CUserID): CInt; CDecl;
+  // Returns Handle to Medium Friend Avatar Image for use with SteamAPI_ISteamUtils_GetImageRGBA
   SteamAPI_ISteamFriends_GetMediumFriendAvatar: function (Self: Pointer; steamIDFriend: CUserID): CInt; CDecl;
+  // Returns Handle to Small Friend Avatar Image for use with SteamAPI_ISteamUtils_GetImageRGBA
   SteamAPI_ISteamFriends_GetSmallFriendAvatar: function (Self: Pointer; steamIDFriend: CUserID): CInt; CDecl;
 
+  // ISteamUser
+  // A versioned accessor is exported by the library
   SteamAPI_SteamUser: function (): ISteamUser; CDecl;
+  // Returns Steam User ID of currently logged in user
   SteamAPI_ISteamUser_GetSteamID: function (Self: Pointer): CUserID; CDecl;
 
 var
@@ -491,6 +497,7 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUserStats');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamFriends');
     {$if not defined(USE_TESTING_API)}
+    // RequestCurrentStats removeded in 1.61
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
     {$endif}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievement');

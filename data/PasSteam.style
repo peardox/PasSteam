@@ -11,8 +11,11 @@ object TStyleContainer
       MultiResBitmap = <
         item
         end>
-      Position.X = 560.000000000000000000
+      Position.X = 524.000000000000000000
       Position.Y = 8.000000000000000000
+      Size.Width = 100.000000000000000000
+      Size.Height = 100.000000000000000000
+      Size.PlatformDefault = False
     end
     object TText
       StyleName = 'Text1'

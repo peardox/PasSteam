@@ -70,6 +70,7 @@ procedure TForm1.UserStatsReceived(Sender: TObject);
 var
   Item: TListBoxItem;
   I: Integer;
+  Bitmap: TBitmap;
 begin
   if Assigned(Steam) then
     begin
@@ -90,7 +91,11 @@ begin
           Item.StylesData['SwitchProgress'] := Steam.Achievements[I].Hidden;
           Item.StylesData['SwitchDone'] := Steam.Achievements[I].Done;
           Item.StylesData['LabelDoneDate'] := Steam.Achievements[I].DoneDate;
-          Item.StylesData['IconImage'] := Image1.Bitmap;
+          Bitmap := Steam.SteamBitmapToTBitmap(Steam.Achievements[I].IconAchieved);
+          if Assigned(Bitmap) then
+            Item.StylesData['IconImage'] := {Image1.}Bitmap
+          else
+            Item.StylesData['IconImage'] := Image1.Bitmap;
         end;
       ListBox1.EndUpdate;
     end;

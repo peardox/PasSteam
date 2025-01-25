@@ -18,6 +18,7 @@ type
     procedure AppUpdate(Sender: TObject);
     function GetAvatar: TBitmap;
   public
+    function SteamBitmapToTBitmap(ABitmap: TSteamBitmap): TBitmap;
     constructor Create(const AAppId: TAppId); reintroduce;
     destructor Destroy; override;
     property UpdateCount: Cardinal Read FUpdateCount;
@@ -38,6 +39,7 @@ begin
 
   ApplicationProperties();
 
+  FAvatar := nil;
   FUpdateCount := 0;
   FAppTimer := TTimer.Create(Nil);
   FAppTimer.OnTimer := Nil;
@@ -47,7 +49,9 @@ end;
 
 destructor TSteamApp.Destroy;
 begin
-
+  FAppTimer.Enabled := False;
+  FreeAndNil(FAppTimer);
+  FreeAndNil(FAvatar);
   inherited;
 end;
 
@@ -55,7 +59,6 @@ function TSteamApp.GetAvatar: TBitmap;
 var
   SteamImage: TSteamBitmap;
   B: TBitmap;
-  x, y: integer;
   Src, Dst: TBitmapData;
   S, D: Pointer;
 begin
@@ -100,6 +103,32 @@ begin
       FAppTimer.OnTimer := Nil;
       FAppTimer.Interval := FInterval;
       FAppTimer.Enabled := False;
+    end;
+end;
+
+function TSteamApp.SteamBitmapToTBitmap(ABitmap: TSteamBitmap): TBitmap;
+var
+  B: TBitmap;
+  Src, Dst: TBitmapData;
+begin
+  Result := nil;
+  if Assigned(ABitmap) and ABitmap.IsValid then
+    begin
+      B := TBitmap.Create(ABitmap.Width, ABitmap.Height);
+      if B.BytesPerPixel <> ABitmap.BPP then
+        Raise Exception.Create('Mis-matched Bytes Per Pixel');
+      if B.Map(TMapAccess.Write, Dst) then
+        begin
+          Src := TBitmapData.Create(ABitmap.Width, ABitmap.Height, TPixelFormat.RGBA);
+          Src.Data := ABitmap.Image;
+          AlphaColorToScanline(@PAlphaColorArray(Src.Data)[0],
+            Dst.Data,
+            ABitmap.Width * ABitmap.Height,
+            TPixelFormat.RGBA);
+
+          B.Unmap(Dst);
+          Result := B;
+        end;
     end;
 end;
 
