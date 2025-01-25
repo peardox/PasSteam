@@ -91,9 +91,10 @@ begin
           Item.StylesData['SwitchProgress'] := Steam.Achievements[I].Hidden;
           Item.StylesData['SwitchDone'] := Steam.Achievements[I].Done;
           Item.StylesData['LabelDoneDate'] := Steam.Achievements[I].DoneDate;
+
           Bitmap := Steam.SteamBitmapToTBitmap(Steam.Achievements[I].IconAchieved);
           if Assigned(Bitmap) then
-            Item.StylesData['IconImage'] := {Image1.}Bitmap
+            Item.StylesData['IconImage'] := Bitmap
           else
             Item.StylesData['IconImage'] := Image1.Bitmap;
         end;

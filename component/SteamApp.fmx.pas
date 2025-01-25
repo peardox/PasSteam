@@ -55,36 +55,63 @@ begin
   inherited;
 end;
 
+function RGBAArrayToBitmap(const RGBAArray: TArray<Byte>; Width, Height: Integer): TBitmap;
+var
+  Bitmap: TBitmap;
+  x, y: Integer;
+  PixelColor: TAlphaColor;
+  BitmapData: TBitmapData;
+begin
+  Result := nil;
+  // Ensure the array size matches the expected size for the given dimensions
+  if Length(RGBAArray) <> Width * Height * 4 then
+    raise Exception.Create('Invalid RGBA array size.');
+
+  // Create a new TBitmap with the given dimensions
+  Bitmap := TBitmap.Create(Width, Height);
+
+  // Lock the bitmap data for writing
+  if Bitmap.Map(TMapAccess.Write, BitmapData) then
+  try
+    // Iterate through each pixel
+    for y := 0 to Height - 1 do
+    begin
+      for x := 0 to Width - 1 do
+      begin
+        // Calculate the index in the RGBA array
+        // Each pixel has 4 bytes (R, G, B, A)
+        PixelColor := TAlphaColor(
+          (RGBAArray[(y * Width + x) * 4 + 3] shl 24) or // A
+          (RGBAArray[(y * Width + x) * 4 + 0] shl 16) or // R
+          (RGBAArray[(y * Width + x) * 4 + 1] shl 8) or  // G
+          (RGBAArray[(y * Width + x) * 4 + 2] shl 0)     // B
+        );
+
+        // Set the pixel color in the bitmap
+        BitmapData.SetPixel(x, y, PixelColor);
+      end;
+    end;
+  finally
+    // Unlock the bitmap data
+    Bitmap.Unmap(BitmapData);
+    Result := Bitmap;
+  end;
+end;
+
 function TSteamApp.GetAvatar: TBitmap;
 var
   SteamImage: TSteamBitmap;
   B: TBitmap;
-  Src, Dst: TBitmapData;
-  S, D: Pointer;
+  Dst: TBitmapData;
+  S, D, SR, DR: Pointer;
+  Row: Integer;
 begin
   Result := nil;
   if UserStatsReceived then
     begin
       SteamImage := GetFriendImage(UserId);
       if SteamImage.IsValid then
-        begin
-          B := TBitmap.Create(SteamImage.Width, SteamImage.Height);
-          if B.BytesPerPixel <> SteamImage.BPP then
-            Raise Exception.Create('Mis-matched Bytes Per Pixel');
-          if B.Map(TMapAccess.Write, Dst) then
-            begin
-              Src := TBitmapData.Create(SteamImage.Width, SteamImage.Height, TPixelFormat.RGBA);
-              Src.Data := SteamImage.Image;
-              AlphaColorToScanline(@PAlphaColorArray(Src.Data)[0],
-                Dst.Data,
-                SteamImage.Width * SteamImage.Height,
-                TPixelFormat.RGBA);
-
-              B.Unmap(Dst);
-              Result := B;
-              SteamImage.Free;
-            end;
-        end;
+        Result := SteamBitmapToTBitmap(SteamImage);
     end;
 end;
 
@@ -109,7 +136,9 @@ end;
 function TSteamApp.SteamBitmapToTBitmap(ABitmap: TSteamBitmap): TBitmap;
 var
   B: TBitmap;
-  Src, Dst: TBitmapData;
+  Dst: TBitmapData;
+  S, D, SR, DR: Pointer;
+  Row: Integer;
 begin
   Result := nil;
   if Assigned(ABitmap) and ABitmap.IsValid then
@@ -118,13 +147,17 @@ begin
       if B.BytesPerPixel <> ABitmap.BPP then
         Raise Exception.Create('Mis-matched Bytes Per Pixel');
       if B.Map(TMapAccess.Write, Dst) then
-        begin
-          Src := TBitmapData.Create(ABitmap.Width, ABitmap.Height, TPixelFormat.RGBA);
-          Src.Data := ABitmap.Image;
-          AlphaColorToScanline(@PAlphaColorArray(Src.Data)[0],
-            Dst.Data,
-            ABitmap.Width * ABitmap.Height,
-            TPixelFormat.RGBA);
+            begin
+              for Row := 0 to ABitmap.Height - 1 do
+                begin
+                  DR := Dst.GetScanline(Row);
+                  SR := Pointer(NativeInt(ABitmap.Image) +
+                        (SizeOf(TAlphaColor) * Row * ABitmap.Width) );
+                  AlphaColorToScanline(@PAlphaColorArray(SR)[0],
+                    DR,
+                    ABitmap.Width,
+                    TPixelFormat.RGBA);
+                end;
 
           B.Unmap(Dst);
           Result := B;

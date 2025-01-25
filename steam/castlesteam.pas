@@ -383,9 +383,9 @@ procedure TCastleSteam.CallbackUserAchievementIconFetched(
   P: PUserAchievementIconFetched);
 var
   Im: TSteamBitmap;
+  SAnsi: AnsiString;
   S: String;
-  PA: TBytes;
-  L: Integer;
+  T: TUserAchievementIconFetched;
 begin
   if (P^).ImageHandle = 0 then
     begin
@@ -398,12 +398,13 @@ begin
   {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
   WriteLnLog('Steam', 'Got UserAchievementIcon from Steam for %d',[(P^).ImageHandle]);
   {$endif}
-
-  S := TEncoding.ANSI.GetString(BytesOf(@(P.AchievementName), k_cchStatNameMax));
-  L := S.IndexOf(#0);
-  SetLength(S, L);
-  if(L > 0) then
-    Im := GetSteamBitmap((P^).ImageHandle);
+  T := P^;
+  SetString(S, PAnsiChar(Pointer(T.AchievementName)), 128);
+ // S := String(SAnsi);
+  if T.ImageHandle > 0 then
+    begin
+      // Im := GetSteamBitmap((P^).ImageHandle);
+    end;
 
 { ToDo
   if (P).AchievedIconState then
@@ -772,7 +773,7 @@ begin
   IRes := SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, PAnsiChar(AnsiString(FApiId)));
   if IRes <> 0 then
     begin
-      Result := FIcon;
+      Result := IRes;
       {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
       WritelnLog('GetAchievementIcon returned %d for %s', [FIcon, FApiId]);
       {$endif}
