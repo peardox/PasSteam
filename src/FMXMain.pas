@@ -21,13 +21,13 @@ type
     Memo1: TMemo;
     Image1: TImage;
     Layout1: TLayout;
-    Image2: TImage;
+    Avatar: TImage;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
     procedure AppUpdate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     { Private declarations }
-    FAvatar: TBitmap;
     UpCall: Integer;
   public
     { Public declarations }
@@ -66,6 +66,11 @@ begin
   Steam.OnAppUpdate := AppUpdate;
 end;
 
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  FreeAndNil(Steam);
+end;
+
 procedure TForm1.UserStatsReceived(Sender: TObject);
 var
   Item: TListBoxItem;
@@ -74,14 +79,14 @@ var
 begin
   if Assigned(Steam) then
     begin
-      Image2.Bitmap := Steam.Avatar;
+      Avatar.Bitmap := Steam.Avatar;
       Inc(UpCall);
+
       ListBox1.BeginUpdate;
       ListBox1.Items.Clear;
       for I := 0 to Steam.Achievements.Count - 1 do
         begin
-          Item := TListBoxItem.Create(nil);
-
+          Item := TListBoxItem.Create(Self);
           Item.Parent := ListBox1;
           Item.StyleLookup := 'CustomItem';
           Item.Text := '';
@@ -90,15 +95,21 @@ begin
           Item.StylesData['LabelDesc'] := Steam.Achievements[I].Desc;
           Item.StylesData['SwitchProgress'] := Steam.Achievements[I].Hidden;
           Item.StylesData['SwitchDone'] := Steam.Achievements[I].Done;
-          Item.StylesData['LabelDoneDate'] := Steam.Achievements[I].DoneDate;
+          if Steam.Achievements[I].Done then
+            Item.StylesData['LabelDoneDate'] := Steam.Achievements[I].DoneDate;
 
           Bitmap := Steam.SteamBitmapToTBitmap(Steam.Achievements[I].IconAchieved);
           if Assigned(Bitmap) then
-            Item.StylesData['IconImage'] := Bitmap
+            begin
+              Item.StylesData['IconImage'] := Bitmap;
+              FreeAndNil(Steam.Achievements[I].IconAchieved);
+            end
           else
-            Item.StylesData['IconImage'] := Image1.Bitmap;
+            Item.StylesData['IconImage'] :=  Image1.Bitmap;
+//            Item.ItemData.Bitmap := Image1.Bitmap;
         end;
       ListBox1.EndUpdate;
+
     end;
 end;
 

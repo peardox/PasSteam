@@ -111,8 +111,11 @@ begin
     begin
       SteamImage := GetFriendImage(UserId);
       if SteamImage.IsValid then
-        Result := SteamBitmapToTBitmap(SteamImage);
-    end;
+        begin
+          Result := SteamBitmapToTBitmap(SteamImage);
+          FreeAndNil(SteamImage);
+        end;
+      end;
 end;
 
 procedure TSteamApp.SetInterval(const AValue: Cardinal);

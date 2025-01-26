@@ -9,6 +9,7 @@ object Form1: TForm1
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   DesignerMasterStyle = 0
   object StyleBook1: TStyleBook
     Styles = <
@@ -147,7 +148,7 @@ object Form1: TForm1
         Size.Height = 153.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 5
-        object Image2: TImage
+        object Avatar: TImage
           MultiResBitmap = <
             item
             end>

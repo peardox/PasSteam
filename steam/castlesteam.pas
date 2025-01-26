@@ -64,22 +64,21 @@ type
       FDoneDate: TDateTime;
       FIcon: CInt;
       FIconAchieved: TSteamBitmap;
-      FIconUnAchieved: TSteamBitmap;
     protected
       procedure Populate(SteamUserStats: Pointer; AchievementId: UInt32);
     public
       constructor Create;
+      destructor Destroy; override;
       function GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
-      procedure SetIconBitmap(ABitmap: TSteamBitmap; const Which: Boolean);
+      procedure SetIconBitmap(ABitmap: TSteamBitmap);
       property ApiId: String read FApiId;
       property Name: String read FName;
       property Desc: String read FDesc;
       property Hidden: Boolean read FHidden;
       property Done: Boolean read FDone;
       property DoneDate: TDateTime read FDoneDate;
-      property Icon: CInt read FIcon;
+      property Icon: CInt read FIcon write FIcon;
       property IconAchieved: TSteamBitmap read FIconAchieved;
-      property IconUnAchieved: TSteamBitmap read FIconUnAchieved;
   end;
 
   TSteamAchievementList = {$ifdef fpc}specialize{$endif} TObjectList<TSteamAchievement>;
@@ -379,13 +378,31 @@ begin
   inherited;
 end;
 
+function AnsiCharArrayToStr(P: PAnsiChar; const MaxLen: Cardinal): String;
+var
+  Pos: Integer;
+begin
+  {$ifndef fpc}
+  Result := '';
+  Pos := 0;
+  while (P^ <> #0) and (Pos < MaxLen) do
+    begin
+      Result := Result + PAnsiChar({$ifdef FPC}@{$endif}(P^));
+      Inc(P);
+      Pos := Pos + SizeOf(AnsiChar);
+    end;
+  {$else}
+  Result := P;
+  {$endif}
+end;
 procedure TCastleSteam.CallbackUserAchievementIconFetched(
   P: PUserAchievementIconFetched);
 var
   Im: TSteamBitmap;
   SAnsi: AnsiString;
   S: String;
-  T: TUserAchievementIconFetched;
+  PN: Pointer;
+  F, I : Integer;
 begin
   if (P^).ImageHandle = 0 then
     begin
@@ -395,23 +412,31 @@ begin
       Exit;
     end;
 
-  {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-  WriteLnLog('Steam', 'Got UserAchievementIcon from Steam for %d',[(P^).ImageHandle]);
-  {$endif}
-  T := P^;
-  SetString(S, PAnsiChar(Pointer(T.AchievementName)), 128);
- // S := String(SAnsi);
-  if T.ImageHandle > 0 then
+  PN := @((P^).AchievementName);
+  S := AnsiCharArrayToStr(PAnsiChar(PN), k_cchStatNameMax);
+  if Length(S) > 0 then
     begin
-      // Im := GetSteamBitmap((P^).ImageHandle);
-    end;
+      F := -1;
+      // Absolutely horrible linear search
+      for I := 0 to FAchievements.Count - 1 do
+        begin
+        if FAchievements[I].ApiId = S then
+          begin
+            F := I;
+            Break;
+          end;
+        end;
 
-{ ToDo
-  if (P).AchievedIconState then
-    FIconAchieved := Im;
-  else
-    FIconUnAchieved := Im;
-    }
+      if F <> -1 then
+        begin
+          {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
+          WriteLnLog('Steam', 'Fetched UserAchievementIcon from Steam for %s',[S]);
+          {$endif}
+          FAchievements[I].Icon := (P^).ImageHandle;
+          FAchievements[I].SetIconBitmap(GetSteamBitmap(FAchievements[I].Icon));
+        end;
+
+    end;
 end;
 
 procedure TCastleSteam.CallbackUserStatsReceived(P: PUserStatsReceived);
@@ -440,7 +465,7 @@ begin
       begin
         SteamAchievement := TSteamAchievement.Create;
         SteamAchievement.Populate(SteamUserStats, I);
-        SteamAchievement.SetIconBitmap(GetSteamBitmap(SteamAchievement.Icon), True);
+        SteamAchievement.SetIconBitmap(GetSteamBitmap(SteamAchievement.Icon));
         FAchievements.Add(SteamAchievement);
 
       end;
@@ -454,7 +479,9 @@ var
   Buf: Pointer;
   BufSize: Integer;
 begin
-  Result := TSteamBitmap.Create;
+  Result := nil;
+  if ImageHandle = 0 then
+      Exit;
 
   R := SteamAPI_ISteamUtils_GetImageSize(SteamAPI_SteamUtils(), ImageHandle, @ImWidth, @ImHeight);
   if R then
@@ -462,6 +489,7 @@ begin
       {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
       WriteLnLog('Steam', 'GetImageSize : Width : %d, Height : %d', [ImWidth, ImHeight]);
       {$endif}
+      Result := TSteamBitmap.Create;
       Result.SetImageFormat(ImWidth, ImHeight, 4);
       try
         BufSize := Result.GetImageMemorySize;
@@ -761,6 +789,13 @@ begin
   Inherited Create;
 end;
 
+destructor TSteamAchievement.Destroy;
+begin
+  if Assigned(FIconAchieved) then
+    FreeAndNil(FIconAchieved);
+  inherited;
+end;
+
 function TSteamAchievement.GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
 var
   pchName: PAnsiChar;
@@ -805,13 +840,9 @@ begin
   FIcon := GetIcon(SteamUserStats, AchievementId);
 end;
 
-procedure TSteamAchievement.SetIconBitmap(ABitmap: TSteamBitmap;
-  const Which: Boolean);
+procedure TSteamAchievement.SetIconBitmap(ABitmap: TSteamBitmap);
 begin
-  if Which then
     FIconAchieved := ABitmap
-  else
-    FIconUnAchieved := ABitmap;
 end;
 
 { TSteamBitmap }
