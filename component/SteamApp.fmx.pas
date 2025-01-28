@@ -15,15 +15,17 @@ type
     FDoUpdate: TNotifyEvent;
     procedure SetInterval(const AValue: Cardinal);
     procedure AppUpdate(Sender: TObject);
-    function GetAvatar: TBitmap;
+    function GetAvatar: UInt32;
   public
+    procedure ConvertSteamImage(const AHandle: UInt32; const ABitmap: TBitmap);
     function SteamBitmapToTBitmap(ABitmap: TSteamBitmap): TBitmap;
+    function SteamImageToTBitmap(const AHandle: UInt32):TBitmap;
     constructor Create(const AAppId: TAppId); reintroduce;
     destructor Destroy; override;
     property UpdateCount: Cardinal Read FUpdateCount;
     property Interval: Cardinal Read FInterval Write SetInterval;
     property OnAppUpdate: TNotifyEvent read FDoUpdate write FDoUpdate;
-    property Avatar: TBitmap read GetAvatar;
+    property Avatar: UInt32 read GetAvatar;
   end;
 
 implementation
@@ -31,6 +33,81 @@ implementation
 { TSteamApp }
 
 uses SysUtils, System.UITypes, FMX.Utils;
+
+function TSteamApp.SteamImageToTBitmap(const AHandle: UInt32):TBitmap;
+var
+  SteamBitmap: TSteamBitmap;
+  ABitmap: TBitmap;
+  Dst: TBitmapData;
+  SR, DR: Pointer;
+  Row: Integer;
+begin
+  Result := nil;
+  SteamBitmap := GetSteamBitmap(AHandle);
+  try
+    if Assigned(SteamBitmap) and SteamBitmap.IsValid then
+      begin
+        ABitmap := TBitmap.Create(SteamBitmap.Width, SteamBitmap.Height);
+        if ABitmap.BytesPerPixel <> SteamBitmap.BPP then
+          Raise Exception.Create('Mis-matched Bytes Per Pixel');
+        if ABitmap.Map(TMapAccess.Write, Dst) then
+              begin
+                for Row := 0 to SteamBitmap.Height - 1 do
+                  begin
+                    DR := Dst.GetScanline(Row);
+                    SR := Pointer(NativeInt(SteamBitmap.Image) +
+                          (SizeOf(TAlphaColor) * Row * SteamBitmap.Width) );
+                    AlphaColorToScanline(@PAlphaColorArray(SR)[0],
+                      DR,
+                      SteamBitmap.Width,
+                      TPixelFormat.RGBA);
+                  end;
+
+            ABitmap.Unmap(Dst);
+            Result := ABitmap;
+          end;
+      end;
+  finally
+    FreeAndNil(SteamBitmap);
+  end;
+
+end;
+
+procedure TSteamApp.ConvertSteamImage(const AHandle: UInt32; const ABitmap: TBitmap);
+var
+  SteamBitmap: TSteamBitmap;
+  Dst: TBitmapData;
+  SR, DR: Pointer;
+  Row: Integer;
+begin
+  SteamBitmap := GetSteamBitmap(AHandle);
+  try
+    if Assigned(SteamBitmap) and SteamBitmap.IsValid then
+      begin
+        ABitmap.Resize(SteamBitmap.Width, SteamBitmap.Height);
+        if ABitmap.BytesPerPixel <> SteamBitmap.BPP then
+          Raise Exception.Create('Mis-matched Bytes Per Pixel');
+        if ABitmap.Map(TMapAccess.Write, Dst) then
+              begin
+                for Row := 0 to SteamBitmap.Height - 1 do
+                  begin
+                    DR := Dst.GetScanline(Row);
+                    SR := Pointer(NativeInt(SteamBitmap.Image) +
+                          (SizeOf(TAlphaColor) * Row * SteamBitmap.Width) );
+                    AlphaColorToScanline(@PAlphaColorArray(SR)[0],
+                      DR,
+                      SteamBitmap.Width,
+                      TPixelFormat.RGBA);
+                  end;
+
+            ABitmap.Unmap(Dst);
+          end;
+      end;
+  finally
+    FreeAndNil(SteamBitmap);
+  end;
+
+end;
 
 constructor TSteamApp.Create(const AAppId: TAppId);
 begin
@@ -52,63 +129,13 @@ begin
   inherited;
 end;
 
-function RGBAArrayToBitmap(const RGBAArray: TArray<Byte>; Width, Height: Integer): TBitmap;
-var
-  Bitmap: TBitmap;
-  x, y: Integer;
-  PixelColor: TAlphaColor;
-  BitmapData: TBitmapData;
-begin
-  Result := nil;
-  // Ensure the array size matches the expected size for the given dimensions
-  if Length(RGBAArray) <> Width * Height * 4 then
-    raise Exception.Create('Invalid RGBA array size.');
-
-  // Create a new TBitmap with the given dimensions
-  Bitmap := TBitmap.Create(Width, Height);
-
-  // Lock the bitmap data for writing
-  if Bitmap.Map(TMapAccess.Write, BitmapData) then
-  try
-    // Iterate through each pixel
-    for y := 0 to Height - 1 do
-    begin
-      for x := 0 to Width - 1 do
-      begin
-        // Calculate the index in the RGBA array
-        // Each pixel has 4 bytes (R, G, B, A)
-        PixelColor := TAlphaColor(
-          (RGBAArray[(y * Width + x) * 4 + 3] shl 24) or // A
-          (RGBAArray[(y * Width + x) * 4 + 0] shl 16) or // R
-          (RGBAArray[(y * Width + x) * 4 + 1] shl 8) or  // G
-          (RGBAArray[(y * Width + x) * 4 + 2] shl 0)     // B
-        );
-
-        // Set the pixel color in the bitmap
-        BitmapData.SetPixel(x, y, PixelColor);
-      end;
-    end;
-  finally
-    // Unlock the bitmap data
-    Bitmap.Unmap(BitmapData);
-    Result := Bitmap;
-  end;
-end;
-
-function TSteamApp.GetAvatar: TBitmap;
+function TSteamApp.GetAvatar: UInt32;
 var
   SteamImage: TSteamBitmap;
 begin
-  Result := nil;
+  Result := 0;
   if UserStatsReceived then
-    begin
-      SteamImage := GetFriendImage(UserId);
-      if SteamImage.IsValid then
-        begin
-          Result := SteamBitmapToTBitmap(SteamImage);
-          FreeAndNil(SteamImage);
-        end;
-      end;
+     Result := GetFriendImageHandle(UserId);
 end;
 
 procedure TSteamApp.SetInterval(const AValue: Cardinal);

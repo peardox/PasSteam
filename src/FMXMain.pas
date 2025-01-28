@@ -114,14 +114,11 @@ end;
 procedure TForm1.UserStatsReceived(Sender: TObject);
 var
   I: Integer;
-  Bitmap: TBitmap;
   AchItem: TAchievementItem;
 begin
   if Assigned(Steam) then
     begin
-      Bitmap := Steam.Avatar;
-      Avatar.Bitmap := Bitmap;
-      FreeAndNil(Bitmap);
+      Steam.ConvertSteamImage(Steam.Avatar, Avatar.Bitmap);
       Inc(UpCall);
 
       vsbAch.BeginUpdate;
@@ -190,13 +187,10 @@ end;
 
 destructor TAchievementItem.Destroy;
 begin
-//  FreeAndNil(FImage.Bitmap);
   inherited;
 end;
 
 procedure TAchievementItem.AddData(const AItem: TSteamAchievement; const BadImage: TBitmap);
-var
-  Bitmap : TBitmap;
 begin
   FApiID.Text := AItem.ApiId;
   FAchName.Text := AItem.Name;
@@ -207,17 +201,12 @@ begin
   if AItem.Achieved then
     FAchieved.Text := 'Achieved on ' + DateTimeToStr(AItem.DoneDate)
   else
-    FAchieved.Text := 'Not Achieved yet';
+    FAchieved.Text := 'Not Achieved Yet';
 
   if AItem.Icon <> 0 then
     begin
-      Bitmap := Steam.SteamBitmapToTBitmap(AItem.IconAchieved);
-      if Assigned(Bitmap) then
-        begin
-          FImage.Bitmap := Bitmap;
-          FreeAndNil(Bitmap);
-        end
-      else
+      Steam.ConvertSteamImage(AItem.Icon, FImage.Bitmap);
+      if not Assigned(FImage.Bitmap) then
         FImage.Bitmap := BadImage;
     end
   else

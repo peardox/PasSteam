@@ -130,7 +130,7 @@ type
       without this setter }
     procedure SetOnUserStatsReceived(const AValue: TNotifyEvent);
   public
-    function GetFriendImage(const FriendID: CUserID; const Size: TIconSize = IconLarge): TSteamBitmap;
+    function GetFriendImageHandle(const FriendID: CUserID; const Size: TIconSize = IconLarge): CInt;
     function GetSteamBitmap(const ImageHandle: CInt): TSteamBitmap;
     { Connect to Steam and initialize everything.
 
@@ -384,7 +384,7 @@ end;
 
 function AnsiCharArrayToStr(P: PAnsiChar; const MaxLen: Cardinal): String;
 var
-  Pos: Integer;
+  Pos: Cardinal;
 begin
   {$ifndef fpc}
   Result := '';
@@ -510,27 +510,20 @@ begin
   {$endif}
 end;
 
-function TCastleSteam.GetFriendImage(const FriendID: CUserID; const Size: TIconSize): TSteamBitmap;
+function TCastleSteam.GetFriendImageHandle(const FriendID: CUserID; const Size: TIconSize): CInt;
 var
   Avatar: CInt;
 begin
-  Result := nil;
-
   case Size of
     IconSmall:
-      Avatar := SteamAPI_ISteamFriends_GetSmallFriendAvatar(SteamFriends, FriendID);
+      Result := SteamAPI_ISteamFriends_GetSmallFriendAvatar(SteamFriends, FriendID);
     IconMedium:
-      Avatar := SteamAPI_ISteamFriends_GetMediumFriendAvatar(SteamFriends, FriendID);
+      Result := SteamAPI_ISteamFriends_GetMediumFriendAvatar(SteamFriends, FriendID);
     IconLarge:
-      Avatar := SteamAPI_ISteamFriends_GetLargeFriendAvatar(SteamFriends, FriendID);
+      Result := SteamAPI_ISteamFriends_GetLargeFriendAvatar(SteamFriends, FriendID);
   else
-    Avatar := 0;
+    Result := 0;
   end;
-
-  if Avatar <> 0 then
-    begin
-      Result := GetSteamBitmap(Avatar);
-    end;
 end;
 
 procedure TCastleSteam.SteamError(const ErrorMsg: String);
