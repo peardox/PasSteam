@@ -13,7 +13,6 @@ type
     FUpdateCount: Cardinal;
     FInterval: Cardinal;
     FDoUpdate: TNotifyEvent;
-    FAvatar: TBitmap;
     procedure SetInterval(const AValue: Cardinal);
     procedure AppUpdate(Sender: TObject);
     function GetAvatar: TBitmap;
@@ -39,7 +38,6 @@ begin
 
   ApplicationProperties();
 
-  FAvatar := nil;
   FUpdateCount := 0;
   FAppTimer := TTimer.Create(Nil);
   FAppTimer.OnTimer := Nil;
@@ -51,7 +49,6 @@ destructor TSteamApp.Destroy;
 begin
   FAppTimer.Enabled := False;
   FreeAndNil(FAppTimer);
-  FreeAndNil(FAvatar);
   inherited;
 end;
 
@@ -101,10 +98,6 @@ end;
 function TSteamApp.GetAvatar: TBitmap;
 var
   SteamImage: TSteamBitmap;
-  B: TBitmap;
-  Dst: TBitmapData;
-  S, D, SR, DR: Pointer;
-  Row: Integer;
 begin
   Result := nil;
   if UserStatsReceived then
@@ -140,7 +133,7 @@ function TSteamApp.SteamBitmapToTBitmap(ABitmap: TSteamBitmap): TBitmap;
 var
   B: TBitmap;
   Dst: TBitmapData;
-  S, D, SR, DR: Pointer;
+  SR, DR: Pointer;
   Row: Integer;
 begin
   Result := nil;

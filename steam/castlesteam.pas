@@ -53,21 +53,25 @@ type
     property Image: PByteArray read FImage;
   end;
 
+  TCastleSteam = class;
+
   TSteamAchievement = Class
     strict private
+      FOwner: TObject;
       FAchId: UInt32;
       FApiId: String;
       FName: String;
       FDesc: String;
       FHidden: Boolean;
-      FDone: Boolean;
+      FAchieved: Boolean;
       FDoneDate: TDateTime;
       FIcon: CInt;
       FIconAchieved: TSteamBitmap;
+      procedure SetAchieved(const AChecked: Boolean);
     protected
       procedure Populate(SteamUserStats: Pointer; AchievementId: UInt32);
     public
-      constructor Create;
+      constructor Create(AOwner: TCastleSteam);
       destructor Destroy; override;
       function GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
       procedure SetIconBitmap(ABitmap: TSteamBitmap);
@@ -75,7 +79,7 @@ type
       property Name: String read FName;
       property Desc: String read FDesc;
       property Hidden: Boolean read FHidden;
-      property Done: Boolean read FDone;
+      property Achieved: Boolean read FAchieved write SetAchieved;
       property DoneDate: TDateTime read FDoneDate;
       property Icon: CInt read FIcon write FIcon;
       property IconAchieved: TSteamBitmap read FIconAchieved;
@@ -343,8 +347,8 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     {$else}
     if SteamUserStats <> Nil then
       begin
-        FUserStatsReceived := true;
         GetAchievements;
+        FUserStatsReceived := true;
         if Assigned(OnUserStatsReceived) then
           OnUserStatsReceived(Self);
         FUserId := SteamAPI_ISteamUser_GetSteamID(SteamUser);
@@ -387,7 +391,7 @@ begin
   Pos := 0;
   while (P^ <> #0) and (Pos < MaxLen) do
     begin
-      Result := Result + PAnsiChar({$ifdef FPC}@{$endif}(P^));
+      Result := Result + String(AnsiChar(PAnsiChar({$ifdef FPC}@{$endif}(P^))));
       Inc(P);
       Pos := Pos + SizeOf(AnsiChar);
     end;
@@ -398,8 +402,6 @@ end;
 procedure TCastleSteam.CallbackUserAchievementIconFetched(
   P: PUserAchievementIconFetched);
 var
-  Im: TSteamBitmap;
-  SAnsi: AnsiString;
   S: String;
   PN: Pointer;
   F, I : Integer;
@@ -463,11 +465,9 @@ begin
   if NumAchievements > 0 then
     for I := 0 to NumAchievements - 1 do
       begin
-        SteamAchievement := TSteamAchievement.Create;
+        SteamAchievement := TSteamAchievement.Create(Self);
         SteamAchievement.Populate(SteamUserStats, I);
-        SteamAchievement.SetIconBitmap(GetSteamBitmap(SteamAchievement.Icon));
         FAchievements.Add(SteamAchievement);
-
       end;
   WriteLnLog('Steam Achievements: %d', [Achievements.Count]);
 end;
@@ -784,9 +784,10 @@ end;
 
 { TSteamAchievement }
 
-constructor TSteamAchievement.Create;
+constructor TSteamAchievement.Create(AOwner: TCastleSteam);
 begin
   Inherited Create;
+  FOwner := AOwner;
 end;
 
 destructor TSteamAchievement.Destroy;
@@ -798,7 +799,6 @@ end;
 
 function TSteamAchievement.GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
 var
-  pchName: PAnsiChar;
   IRes: CInt;
 begin
   Result := 0;
@@ -821,7 +821,7 @@ procedure TSteamAchievement.Populate(SteamUserStats: Pointer; AchievementId: UIn
 var
   pchName: PAnsiChar;
   pchHidden: PAnsiChar;
-  bDone: TSteamBool;
+  bAchieved: TSteamBool;
   uDate: UInt32;
 begin
   FAchId := AchievementId;
@@ -834,10 +834,25 @@ begin
     FHidden := True
   else
     FHidden := False;
-  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(SteamUserStats, pchName, @bDone, @uDate);
-  FDone := bDone;
+  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(SteamUserStats, pchName, @bAchieved, @uDate);
+  FAchieved := bAchieved;
   FDoneDate := UnixToDateTime(uDate);
   FIcon := GetIcon(SteamUserStats, AchievementId);
+  FIconAchieved := TCastleSteam(FOwner).GetSteamBitmap(FIcon);
+
+end;
+
+procedure TSteamAchievement.SetAchieved(const AChecked: Boolean);
+begin
+  if not(FOwner is TCastleSteam) then
+    Exit;
+
+  FAchieved := AChecked;
+  if FAchieved then
+    TCastleSteam(FOwner).SetAchievement(FApiId)
+  else
+    TCastleSteam(FOwner).ClearAchievement(FApiId);
+//  FIconAchieved := TCastleSteam(FOwner).GetSteamBitmap(FIcon);
 end;
 
 procedure TSteamAchievement.SetIconBitmap(ABitmap: TSteamBitmap);

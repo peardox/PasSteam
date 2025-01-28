@@ -9,6 +9,9 @@
         <Projects Include="SteamVCL.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="projects\FMX3D.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
     <Target Name="SteamVCL:Make">
         <MSBuild Projects="SteamVCL.dproj" Targets="Make"/>
     </Target>
+    <Target Name="FMX3D">
+        <MSBuild Projects="projects\FMX3D.dproj"/>
+    </Target>
+    <Target Name="FMX3D:Clean">
+        <MSBuild Projects="projects\FMX3D.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FMX3D:Make">
+        <MSBuild Projects="projects\FMX3D.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="SteamFMX;SteamVCL"/>
+        <CallTarget Targets="SteamFMX;SteamVCL;FMX3D"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="SteamFMX:Clean;SteamVCL:Clean"/>
+        <CallTarget Targets="SteamFMX:Clean;SteamVCL:Clean;FMX3D:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="SteamFMX:Make;SteamVCL:Make"/>
+        <CallTarget Targets="SteamFMX:Make;SteamVCL:Make;FMX3D:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
