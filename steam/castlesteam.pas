@@ -24,14 +24,17 @@ interface
 
 {$define CASTLE_DEBUG_STEAM_API_TESTING}
 
-uses Classes, CTypes, SysUtils,
+uses Classes, CTypes, SysUtils, {SteamTypes,}
   {$ifndef fpc}System.Generics.Collections,{$else}Contnrs,Generics.Collections,{$endif}
   CastleInternalSteamApi;
 
 type
   TAppId = CastleInternalSteamApi.TAppId;
-
   TIconSize = (IconSmall, IconMedium, IconLarge);
+  TAchievementChanged = (AchievedChanged, IconChanged, ImageChanged);
+  TSteamAchievement = Class;
+
+  TAchievementUpdatedEvent = procedure(AValue: TSteamAchievement; const WhatChanged: TAchievementChanged) of object;
 
   TSteamBitmap = class
   strict private
@@ -66,7 +69,7 @@ type
       FAchieved: Boolean;
       FDoneDate: TDateTime;
       FIcon: CInt;
-      FIconAchieved: TSteamBitmap;
+      FOnAchievementUpdated: TAchievementUpdatedEvent;
       procedure SetAchieved(const AChecked: Boolean);
     protected
       procedure Populate(SteamUserStats: Pointer; AchievementId: UInt32);
@@ -74,7 +77,6 @@ type
       constructor Create(AOwner: TCastleSteam);
       destructor Destroy; override;
       function GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
-      procedure SetIconBitmap(ABitmap: TSteamBitmap);
       property ApiId: String read FApiId;
       property Name: String read FName;
       property Desc: String read FDesc;
@@ -82,7 +84,9 @@ type
       property Achieved: Boolean read FAchieved write SetAchieved;
       property DoneDate: TDateTime read FDoneDate;
       property Icon: CInt read FIcon write FIcon;
-      property IconAchieved: TSteamBitmap read FIconAchieved;
+      property OnAchievementUpdated: TAchievementUpdatedEvent
+        read FOnAchievementUpdated write FOnAchievementUpdated;
+
   end;
 
   TSteamAchievementList = {$ifdef fpc}specialize{$endif} TObjectList<TSteamAchievement>;
@@ -103,10 +107,14 @@ type
     FUserStatsReceived: Boolean;
     FOnUserStatsReceived: TNotifyEvent;
     StoreStats: Boolean;
+    // Pointers for ISteam....
+    // SteamApps: Pointer;
     SteamClient: Pointer;
+    SteamFriends: Pointer;
+    SteamInput: Pointer;
     SteamUser: Pointer;
     SteamUserStats: Pointer;
-    SteamFriends: Pointer;
+    SteamUtils: Pointer;
     SteamUserHandle: HSteamUser;
     SteamPipeHandle: HSteamPipe;
     procedure CallbackUserStatsReceived(P: PUserStatsReceived);
@@ -168,6 +176,9 @@ type
       This is the normal state of things when the game is run through Steam.
       It means that all features of this class work as they should. }
     property Enabled: Boolean read FEnabled;
+
+    // Public Interface Access
+    property ISteamUserStats: Pointer read SteamUserStats;
 
     { Achievement names for this game (read-only).
       These are IDs of achievements, can be used in other calls
@@ -330,18 +341,28 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     SteamUser := SteamAPI_ISteamClient_GetISteamUser(
        SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
 
+    // Init SteamApps - returns nil?
+//    SteamApps := SteamAPI_ISteamClient_GetISteamApps(
+//      SteamClient, SteamUserHandle, SteamPipeHandle, STEAMAPPS_INTERFACE_VERSION);
+
     // Init SteamFriends
     SteamFriends := SteamAPI_ISteamClient_GetISteamFriends(
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMFRIENDS_INTERFACE_VERSION);
 
-    // Init SteamUtls
-//    SteamUtils := SteamAPI_ISteamClient_GetISteamUtils(
-//       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUTILS_INTERFACE_VERSION);
+    // Init SteamUtils
+    SteamUtils := SteamAPI_ISteamClient_GetISteamUtils(
+       SteamClient, SteamPipeHandle, STEAMUTILS_INTERFACE_VERSION);
+
+    // Init SteamInput
+    SteamInput := SteamAPI_ISteamClient_GetISteamInput(
+       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMINPUT_INTERFACE_VERSION);
 
 
     // Init SteamUserStats and request UserStats (will wait for callback, handled in Update)
     SteamUserStats := SteamAPI_ISteamClient_GetISteamUserStats(
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSERSTATS_INTERFACE_VERSION);
+
+    FUserId := SteamAPI_ISteamUser_GetSteamID(SteamUser);
     {$if not defined(USE_TESTING_API)}
     SteamAPI_ISteamUserStats_RequestCurrentStats(SteamUserStats);
     {$else}
@@ -351,7 +372,6 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
         FUserStatsReceived := true;
         if Assigned(OnUserStatsReceived) then
           OnUserStatsReceived(Self);
-        FUserId := SteamAPI_ISteamUser_GetSteamID(SteamUser);
       end;
     {$endif}
 
@@ -382,31 +402,13 @@ begin
   inherited;
 end;
 
-function AnsiCharArrayToStr(P: PAnsiChar; const MaxLen: Cardinal): String;
-var
-  Pos: Cardinal;
-begin
-  {$ifndef fpc}
-  Result := '';
-  Pos := 0;
-  while (P^ <> #0) and (Pos < MaxLen) do
-    begin
-      Result := Result + String(AnsiChar(PAnsiChar({$ifdef FPC}@{$endif}(P^))));
-      Inc(P);
-      Pos := Pos + SizeOf(AnsiChar);
-    end;
-  {$else}
-  Result := P;
-  {$endif}
-end;
 procedure TCastleSteam.CallbackUserAchievementIconFetched(
   P: PUserAchievementIconFetched);
 var
   S: String;
-  PN: Pointer;
   F, I : Integer;
 begin
-  if (P^).ImageHandle = 0 then
+  if P.m_nIconHandle = 0 then
     begin
       {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
       WriteLnLog('Steam', 'No Icon Available');
@@ -414,8 +416,7 @@ begin
       Exit;
     end;
 
-  PN := @((P^).AchievementName);
-  S := AnsiCharArrayToStr(PAnsiChar(PN), k_cchStatNameMax);
+  S := String(P.m_rgchAchievementName);
   if Length(S) > 0 then
     begin
       F := -1;
@@ -432,10 +433,11 @@ begin
       if F <> -1 then
         begin
           {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-          WriteLnLog('Steam', 'Fetched UserAchievementIcon from Steam for %s',[S]);
+          WriteLnLog('Image ==>', 'Fetched UserAchievementIcon from Steam for %s with Handle %d',[S, (P^).m_nIconHandle]);
           {$endif}
-          FAchievements[I].Icon := (P^).ImageHandle;
-          FAchievements[I].SetIconBitmap(GetSteamBitmap(FAchievements[I].Icon));
+          FAchievements[F].Icon := P.m_nIconHandle;
+          if Assigned(FAchievements[F].OnAchievementUpdated) then
+            FAchievements[F].OnAchievementUpdated(FAchievements[F], ImageChanged);
         end;
 
     end;
@@ -483,18 +485,18 @@ begin
   if ImageHandle = 0 then
       Exit;
 
-  R := SteamAPI_ISteamUtils_GetImageSize(SteamAPI_SteamUtils(), ImageHandle, @ImWidth, @ImHeight);
+  R := SteamAPI_ISteamUtils_GetImageSize(SteamUtils, ImageHandle, @ImWidth, @ImHeight);
   if R then
     begin
       {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-      WriteLnLog('Steam', 'GetImageSize : Width : %d, Height : %d', [ImWidth, ImHeight]);
+//      WriteLnLog('Steam', 'GetImageSize : Width : %d, Height : %d', [ImWidth, ImHeight]);
       {$endif}
       Result := TSteamBitmap.Create;
       Result.SetImageFormat(ImWidth, ImHeight, 4);
       try
         BufSize := Result.GetImageMemorySize;
         Buf := GetMem(BufSize);
-        if SteamAPI_ISteamUtils_GetImageRGBA(SteamAPI_SteamUtils(), ImageHandle, Buf, BufSize) then
+        if SteamAPI_ISteamUtils_GetImageRGBA(SteamUtils, ImageHandle, Buf, BufSize) then
           begin
             Result.SetImage(Buf);
             Result.IsValid := True;
@@ -511,8 +513,6 @@ begin
 end;
 
 function TCastleSteam.GetFriendImageHandle(const FriendID: CUserID; const Size: TIconSize): CInt;
-var
-  Avatar: CInt;
 begin
   case Size of
     IconSmall:
@@ -694,10 +694,10 @@ procedure TCastleSteam.Update(Sender: TObject);
           end;
         TUserAchievementIconFetched.k_iCallback:
           begin
-            {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
-            WritelnLog('Steam', 'Icon Handle Received (m_iCallback : %d)', [Callback.m_iCallback]);
-            {$endif}
-            CallbackUserAchievementIconFetched(PUserAchievementIconFetched(Callback.m_pubParam));
+            if(SizeOf(TUserAchievementIconFetched) <> Callback.m_cubParam) then
+              WritelnLog('Callbacks', 'TUserAchievementIconFetched Size = %d, should be %d)', [SizeOf(TUserAchievementIconFetched), Callback.m_cubParam])
+            else
+              CallbackUserAchievementIconFetched(PUserAchievementIconFetched(Callback.m_pubParam));
           end;
         else
           begin
@@ -730,28 +730,28 @@ function TCastleSteam.Country: String;
 begin
   if not Enabled then
     Exit('');
-  Result := String(SteamAPI_ISteamUtils_GetIPCountry(SteamAPI_SteamUtils()));
+  Result := String(SteamAPI_ISteamUtils_GetIPCountry(SteamUtils));
 end;
 
 function TCastleSteam.OverlayEnabled: Boolean;
 begin
   if not Enabled then
     Exit(false);
-  Result := SteamAPI_ISteamUtils_IsOverlayEnabled(SteamAPI_SteamUtils());
+  Result := SteamAPI_ISteamUtils_IsOverlayEnabled(SteamUtils);
 end;
 
 function TCastleSteam.RunningInVR: Boolean;
 begin
   if not Enabled then
     Exit(false);
-  Result := SteamAPI_ISteamUtils_IsSteamRunningInVR(SteamAPI_SteamUtils());
+  Result := SteamAPI_ISteamUtils_IsSteamRunningInVR(SteamUtils);
 end;
 
 function TCastleSteam.RunningOnSteamDeck: Boolean;
 begin
   if not Enabled then
     Exit(false);
-  Result := SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(SteamAPI_SteamUtils());
+  Result := SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(SteamUtils);
 end;
 
 function TCastleSteam.BuildId: Integer;
@@ -785,25 +785,16 @@ end;
 
 destructor TSteamAchievement.Destroy;
 begin
-  if Assigned(FIconAchieved) then
-    FreeAndNil(FIconAchieved);
   inherited;
 end;
 
 function TSteamAchievement.GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
-var
-  IRes: CInt;
 begin
-  Result := 0;
-  {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-  WritelnLog('Trying GetAchievementIcon { 1109 }');
-  {$endif}
-  IRes := SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, PAnsiChar(AnsiString(FApiId)));
-  if IRes <> 0 then
+  Result := SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, PAnsiChar(AnsiString(FApiId)));
+  if Result <> 0 then
     begin
-      Result := IRes;
       {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-      WritelnLog('GetAchievementIcon returned %d for %s', [FIcon, FApiId]);
+      WritelnLog('GetAchievementIcon returned Icon Handle %d for %s', [Result, FApiId]);
       {$endif}
     end
   else
@@ -831,11 +822,12 @@ begin
   FAchieved := bAchieved;
   FDoneDate := UnixToDateTime(uDate);
   FIcon := GetIcon(SteamUserStats, AchievementId);
-  FIconAchieved := TCastleSteam(FOwner).GetSteamBitmap(FIcon);
 
 end;
 
 procedure TSteamAchievement.SetAchieved(const AChecked: Boolean);
+var
+  NIcon: CInt;
 begin
   if not(FOwner is TCastleSteam) then
     Exit;
@@ -845,12 +837,13 @@ begin
     TCastleSteam(FOwner).SetAchievement(FApiId)
   else
     TCastleSteam(FOwner).ClearAchievement(FApiId);
-//  FIconAchieved := TCastleSteam(FOwner).GetSteamBitmap(FIcon);
-end;
-
-procedure TSteamAchievement.SetIconBitmap(ABitmap: TSteamBitmap);
-begin
-    FIconAchieved := ABitmap
+  NIcon := GetIcon(TCastleSteam(FOwner).ISteamUserStats, FIcon);
+  if (NIcon <> FIcon) then
+    begin
+      FIcon := NIcon;
+      if Assigned(OnAchievementUpdated) then
+        OnAchievementUpdated(Self, IconChanged);
+    end;
 end;
 
 { TSteamBitmap }
@@ -885,3 +878,4 @@ begin
 end;
 
 end.
+

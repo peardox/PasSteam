@@ -62,6 +62,42 @@ object Form1: TForm1
           Size.Height = 129.000000000000000000
           Size.PlatformDefault = False
         end
+        object Label2: TLabel
+          Position.X = 16.000000000000000000
+          Position.Y = 16.000000000000000000
+          Size.Width = 441.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Label2'
+          TabOrder = 1
+        end
+        object Label3: TLabel
+          Position.X = 16.000000000000000000
+          Position.Y = 36.000000000000000000
+          Size.Width = 441.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Label2'
+          TabOrder = 0
+        end
+        object CheckBox1: TCheckBox
+          Position.X = 16.000000000000000000
+          Position.Y = 96.000000000000000000
+          Size.Width = 369.000000000000000000
+          Size.Height = 19.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 3
+          Text = 'CheckBox1'
+        end
+        object CheckBox2: TCheckBox
+          Position.X = 16.000000000000000000
+          Position.Y = 116.000000000000000000
+          Size.Width = 369.000000000000000000
+          Size.Height = 19.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 2
+          Text = 'CheckBox1'
+        end
       end
       object vsbAch: TFramedVertScrollBox
         Align = Left

@@ -130,8 +130,6 @@ begin
 end;
 
 function TSteamApp.GetAvatar: UInt32;
-var
-  SteamImage: TSteamBitmap;
 begin
   Result := 0;
   if UserStatsReceived then

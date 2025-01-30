@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.StdCtrls, FMX.Controls.Presentation,
-  SteamApp.fmx, CastleSteam, FMX.ListBox, FMX.Layouts,
+  SteamApp.fmx, CastleSteam, {SteamTypes, }FMX.ListBox, FMX.Layouts,
   CastleLog, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.TabControl,
   FMX.Objects;
 
@@ -22,11 +22,13 @@ type
     FAchieved: TCheckbox;
     FHidden: TCheckbox;
     FLine: TLine;
+    procedure DoAchievementUpdated(AValue: TSteamAchievement; const WhatChanged: TAchievementChanged);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    procedure Refresh(const AItem: TSteamAchievement);
     procedure AddData(const AItem: TSteamAchievement; const BadImage: TBitmap = nil);
-
+    property Image: TImage read FImage write FImage;
   end;
 
 
@@ -41,6 +43,10 @@ type
     Layout1: TLayout;
     Avatar: TImage;
     vsbAch: TFramedVertScrollBox;
+    Label2: TLabel;
+    Label3: TLabel;
+    CheckBox1: TCheckBox;
+    CheckBox2: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
     procedure AppUpdate(Sender: TObject);
@@ -58,10 +64,9 @@ var
   Steam: TSteamApp;
 
 const
-  AppId: Integer = 316790; {BG - 228280}  {}
+  AppId: Integer = 316790;
 
 implementation
-
 
 {$R *.fmx}
 
@@ -78,11 +83,16 @@ begin
   if not(Cbx.TagObject is TSteamAchievement) then
     Exit;
   Ach := TSteamAchievement(Cbx.TagObject);
-  Ach.Achieved := Cbx.IsChecked;
-  if Cbx.IsChecked then
-    WriteLnLog('Event ==> ', 'Set %s', [Ach.ApiId])
-  else
-    WriteLnLog('Event ==> ', 'Cleared %s', [Ach.ApiId]);
+  if Ach.Achieved <> Cbx.IsChecked then
+    begin
+      Ach.Achieved := Cbx.IsChecked;
+      if Cbx.IsChecked then
+        WriteLnLog('Event ==> ', 'Set %s', [Ach.ApiId])
+      else
+        WriteLnLog('Event ==> ', 'Cleared %s', [Ach.ApiId]);
+      if Cbx.Owner is TAchievementItem then
+    end;
+  TAchievementItem(Cbx.Owner).Refresh(Ach);
 end;
 
 procedure TForm1.AppUpdate(Sender: TObject);
@@ -118,9 +128,17 @@ var
 begin
   if Assigned(Steam) then
     begin
+      Label2.Text := 'Language : ' + Steam.Language;
+      Label3.Text := 'Build : ' + IntToStr(Steam.BuildId);
+      Checkbox1.Text := 'Running On SteamDeck';
+      CheckBox1.IsChecked := Steam.RunningOnSteamDeck;
+      Checkbox2.Text := 'Overlay Enabled';
+      CheckBox2.IsChecked := Steam.OverlayEnabled;
+
       Steam.ConvertSteamImage(Steam.Avatar, Avatar.Bitmap);
       Inc(UpCall);
 
+      WriteLnLog('Event ==> ', 'vsbAch.BeginUpdate');
       vsbAch.BeginUpdate;
       for I := 0 to Steam.Achievements.Count - 1 do
         begin
@@ -130,6 +148,7 @@ begin
           vsbAch.AddObject(AchItem);
         end;
       vsbAch.EndUpdate;
+      WriteLnLog('Event ==> ', 'vsbAch.EndUpdate');
     end;
 end;
 
@@ -144,7 +163,6 @@ begin
   Align := TAlignLayout.Top;
   Height := 116;
   Width := 640;
-
   FApiID := TLabel.Create(Self);
   FApiID.Parent := Self;
   FApiID.Width := 500;
@@ -192,11 +210,13 @@ end;
 
 procedure TAchievementItem.AddData(const AItem: TSteamAchievement; const BadImage: TBitmap);
 begin
+  AItem.OnAchievementUpdated := DoAchievementUpdated;
   FApiID.Text := AItem.ApiId;
   FAchName.Text := AItem.Name;
   FAchDesc.Text := AItem.Desc;
   FHidden.IsChecked := AItem.Hidden;
   FHidden.Text := 'Hidden';
+  FAchieved.TagObject := AItem;
   FAchieved.IsChecked := AItem.Achieved;
   if AItem.Achieved then
     FAchieved.Text := 'Achieved on ' + DateTimeToStr(AItem.DoneDate)
@@ -205,13 +225,47 @@ begin
 
   if AItem.Icon <> 0 then
     begin
-      Steam.ConvertSteamImage(AItem.Icon, FImage.Bitmap);
-      if not Assigned(FImage.Bitmap) then
-        FImage.Bitmap := BadImage;
+    Steam.ConvertSteamImage(AItem.Icon, FImage.Bitmap);
+    WriteLnLog('Init ==> ', 'Icon = %d',[AItem.Icon]);
     end
   else
-    FImage.Bitmap := BadImage;
+    if FImage.Bitmap.Width = 0 then
+      begin
+      FImage.Bitmap := BadImage;
+      WriteLnLog('Init ==> ', 'Icon = BAD');
+      end;
 
+end;
+
+procedure TAchievementItem.DoAchievementUpdated(AValue: TSteamAchievement;
+  const WhatChanged: TAchievementChanged);
+var
+  bmp: TBitmap;
+begin
+  if not(AValue is TSteamAchievement) then
+    Exit;
+  WriteLnLog('AchUp Event ==> ', 'Self is %s',[Self.ClassName]);
+  case WhatChanged of
+    AchievedChanged: WriteLnLog('Event ==> ', 'Achievement Updated : Achieved Changed');
+    IconChanged: WriteLnLog('Event ==> ', 'Achievement Updated : Icon Changed');
+    ImageChanged: WriteLnLog('Event ==> ', 'Achievement Updated : Image Changed');
+  end;
+
+  if WhatChanged = ImageChanged then
+    begin
+      if AValue.Icon <> 0 then
+        begin
+          Steam.ConvertSteamImage(AValue.Icon, FImage.Bitmap);
+          WriteLnLog('AchUp Event ==> ', 'Updated Image for %s [%s] to %d',[AValue.ApiId, FApiID.Text, AValue.Icon]);
+        end;
+    end;
+
+end;
+
+procedure TAchievementItem.Refresh(const AItem: TSteamAchievement);
+begin
+  if AItem.Icon <> 0 then
+      Steam.ConvertSteamImage(AItem.Icon, FImage.Bitmap);
 end;
 
 end.

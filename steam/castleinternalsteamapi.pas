@@ -107,6 +107,8 @@ type
     for non-1 values. }
   TSteamBool = ByteBool;
   PSteamBool = ^TSteamBool;
+  TCallbackBool = LongBool;
+  PCallbackBool = ^TCallbackBool;
 
 const
   { Versions of Steam API interfaces.
@@ -116,17 +118,27 @@ const
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION013'; //< isteamuserstats.h
   STEAMFRIENDS_INTERFACE_VERSION = 'SteamFriends017'; //< isteamuserstats.h
+  STEAMUTILS_INTERFACE_VERSION = 'SteamUtils010'; //< isteamuser.h
+  STEAMINPUT_INTERFACE_VERSION = 'SteamInput006'; //< isteaminput.h
+  STEAMAPPS_INTERFACE_VERSION = 'SteamApps008'; //< isteaminput.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamUser = '023'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamFriends = '017'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamUser = '023'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamFriends = '017'; //< matches STEAMFRIENDS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamInput = '006'; //< matches STEAMINPUT_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   STEAMLIBVER = '_161';
 {$else}
   STEAMCLIENT_INTERFACE_VERSION = 'SteamClient020'; //< isteamclient.h
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION012'; //< isteamuserstats.h
+  STEAMFRIENDS_INTERFACE_VERSION = 'SteamFriends017'; //< isteamuserstats.h
+  STEAMUTILS_INTERFACE_VERSION = 'SteamUtils010'; //< isteamuser.h
+  STEAMINPUT_INTERFACE_VERSION = 'SteamInput006'; //< isteaminput.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamUser = '023'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamFriends = '017'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
+  VersionSteamInput = '006'; //< matches accessor in steam_api_flat.h
   STEAMLIBVER = '';
 {$endif}
 
@@ -241,19 +253,19 @@ type
 
   // Purpose: called when the latests stats and achievements have been received
   // from the server
-  TUserAchievementIconFetched = record
+  TUserAchievementIconFetched = packed record
   const
     k_iCallback = k_iSteamUserStatsCallbacks + 9;
   var
     // The Game ID this achievement is for.
-    GameID: CGameID;
+    m_nGameID: CGameID;
     // The name of the achievement that this callback is for.
-    AchievementName: PStatName;
+    m_rgchAchievementName: TStatName;
     // Returns whether the icon for the achieved (true) or unachieved (false) version.
-    AchievedIconState: TSteamBool;
+    m_bAchieved: TCallbackBool;
     // Handle to the image, which can be used with ISteamUtils::GetImageRGBA to get the image data.
     // 0 means no image is set for the achievement.
-    ImageHandle: Int32;
+    m_nIconHandle: Int32;
   end;
   PUserAchievementIconFetched = ^TUserAchievementIconFetched;
 
@@ -263,6 +275,7 @@ type
   ISteamApps = record Ptr: Pointer; end;
   ISteamFriends = record Ptr: Pointer; end;
   ISteamUser = record Ptr: Pointer; end;
+  ISteamInput = record Ptr: Pointer; end;
 
   // Pointer to ISteamUtils interface from Steam API.
   ISteamUtils = record Ptr: Pointer; end;
@@ -296,9 +309,14 @@ var
 
   // ISteamClient
   SteamAPI_ISteamClient_SetWarningMessageHook: procedure (SteamClient: Pointer; WarningMessageHook: SteamAPIWarningMessageHook); CDecl;
-  SteamAPI_ISteamClient_GetISteamUser: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  // SteamUtils has no SteamUser
+  SteamAPI_ISteamClient_GetISteamUtils: function (SteamClient: Pointer; SteamPipeHandle: HSteamPipe; const SteamUtilsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  // Steam_ISteamClient_GetISteam...... use SteamUser
+  SteamAPI_ISteamClient_GetISteamUser:      function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamApps:      function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamAppsInterfaceVersion: PAnsiChar): Pointer; CDecl;
   SteamAPI_ISteamClient_GetISteamUserStats: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
-  SteamAPI_ISteamClient_GetISteamFriends: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamFriends:   function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamFriendsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamInput:     function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamInputInterfaceVersion: PAnsiChar): Pointer; CDecl;
 
   // ISteamUserStats
   {$if not defined(USE_TESTING_API)}
@@ -322,6 +340,11 @@ var
   // Call this after changing stats or achievements
   SteamAPI_ISteamUserStats_StoreStats: function (SteamUserStats: Pointer): TSteamBool; CDecl;
 
+  // ISteamInput
+  // A versioned accessor is exported by the library
+  SteamAPI_SteamInput: function (): ISteamInput; CDecl;
+
+
   // ISteamUtils
   // A versioned accessor is exported by the library
   // SteamAPI_SteamUtils_v<VersionSteamUtils>: function (): ISteamUtils; CDecl;
@@ -331,19 +354,19 @@ var
   // Returns the Raw Bitmap Data in pubDest of image Handle iImage. Must call GetImageSize
   // before calling thius in order to allocate memory for buffer that will be filled
   // the destination buffer size should be 4 * height * width * sizeof(char)
-  SteamAPI_ISteamUtils_GetImageRGBA: function (Self: ISteamUtils; iImage: CInt; pubDest: PByte; nDestBufferSize: Int32): TSteamBool; CDecl;
+  SteamAPI_ISteamUtils_GetImageRGBA: function (Self: Pointer; iImage: CInt; pubDest: PByte; nDestBufferSize: Int32): TSteamBool; CDecl;
   // Returns the Width + Height of image Handle iImage - bust be called bnefore GetImageRGBA
-  SteamAPI_ISteamUtils_GetImageSize: function (Self: ISteamUtils; iImage: CInt; pnWidth: PUInt32; pnHeight: PUInt32): TSteamBool; CDecl;
+  SteamAPI_ISteamUtils_GetImageSize: function (Self: Pointer; iImage: CInt; pnWidth: PUInt32; pnHeight: PUInt32): TSteamBool; CDecl;
   // returns the 2 digit ISO 3166-1-alpha-2 format country code this client
   // is running in (as looked up via an IP-to-location database) e.g "US" or "UK".
-  SteamAPI_ISteamUtils_GetIPCountry: function (Self: ISteamUtils): PAnsiChar; CDecl;
+  SteamAPI_ISteamUtils_GetIPCountry: function (Self: Pointer): PAnsiChar; CDecl;
   // Returns true if the overlay is running & the user can access it. The overlay process could take a few seconds to
   // start & hook the game process, so this function will initially return false while the overlay is loading.
-  SteamAPI_ISteamUtils_IsOverlayEnabled: function (Self: ISteamUtils): TSteamBool; CDecl;
+  SteamAPI_ISteamUtils_IsOverlayEnabled: function (Self: Pointer): TSteamBool; CDecl;
   // returns true if Steam itself is running in VR mode
-  SteamAPI_ISteamUtils_IsSteamRunningInVR: function (Self: ISteamUtils): TSteamBool; CDecl;
+  SteamAPI_ISteamUtils_IsSteamRunningInVR: function (Self: Pointer): TSteamBool; CDecl;
   // returns true if currently running on the Steam Deck device
-  SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck: function (Self: ISteamUtils): TSteamBool; CDecl;
+  SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck: function (Self: Pointer): TSteamBool; CDecl;
 
   // ISteamApps
   // A versioned accessor is exported by the library
@@ -426,8 +449,11 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_UnregisterCallback) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamApps) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUtils) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamInput) := nil;
   {$if not defined(USE_TESTING_API)}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := nil;
   {$endif}
@@ -494,8 +520,11 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_UnregisterCallback) := SteamLibrary.Symbol('SteamAPI_UnregisterCallback');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := SteamLibrary.Symbol('SteamAPI_ISteamClient_SetWarningMessageHook');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUser');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamApps) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamApps');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUserStats');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamFriends');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUtils) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUtils');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamInput) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamInput');
     {$if not defined(USE_TESTING_API)}
     // RequestCurrentStats removeded in 1.61
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
@@ -531,8 +560,14 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetLargeFriendAvatar) := SteamLibrary.Symbol('SteamAPI_ISteamFriends_GetLargeFriendAvatar');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetMediumFriendAvatar) := SteamLibrary.Symbol('SteamAPI_ISteamFriends_GetMediumFriendAvatar');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetSmallFriendAvatar) := SteamLibrary.Symbol('SteamAPI_ISteamFriends_GetSmallFriendAvatar');
+    // alias to versioned entry point
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamInput) := SteamLibrary.Symbol('SteamAPI_SteamInput_v' + VersionSteamInput);
   end;
 end;
+
+Initialization
+Finalization
+  FinalizeSteamLibrary;
 
 end.
 
