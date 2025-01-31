@@ -408,7 +408,7 @@ var
   S: String;
   F, I : Integer;
 begin
-  if P.m_nIconHandle = 0 then
+  if P{$ifdef fpc}^{$endif}.m_nIconHandle = 0 then
     begin
       {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
       WriteLnLog('Steam', 'No Icon Available');
@@ -416,7 +416,7 @@ begin
       Exit;
     end;
 
-  S := String(P.m_rgchAchievementName);
+  S := String(P{$ifdef fpc}^{$endif}.m_rgchAchievementName);
   if Length(S) > 0 then
     begin
       F := -1;
@@ -435,7 +435,7 @@ begin
           {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
           WriteLnLog('Image ==>', 'Fetched UserAchievementIcon from Steam for %s with Handle %d',[S, (P^).m_nIconHandle]);
           {$endif}
-          FAchievements[F].Icon := P.m_nIconHandle;
+          FAchievements[F].Icon := P{$ifdef fpc}^{$endif}.m_nIconHandle;
           if Assigned(FAchievements[F].OnAchievementUpdated) then
             FAchievements[F].OnAchievementUpdated(FAchievements[F], ImageChanged);
         end;
