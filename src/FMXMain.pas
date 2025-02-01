@@ -15,7 +15,7 @@ type
 
   TAchievementItem = class(TLayout)
     FOwner: TObject;
-    FApiID: TLabel;
+    FKey: TLabel;
     FAchName: TLabel;
     FAchDesc: TLabel;
     FImage: TImage;
@@ -87,9 +87,9 @@ begin
     begin
       Ach.Achieved := Cbx.IsChecked;
       if Cbx.IsChecked then
-        WriteLnLog('Event ==> ', 'Set %s', [Ach.ApiId])
+        WriteLnLog('Event ==> ', 'Set %s', [Ach.Key])
       else
-        WriteLnLog('Event ==> ', 'Cleared %s', [Ach.ApiId]);
+        WriteLnLog('Event ==> ', 'Cleared %s', [Ach.Key]);
       if Cbx.Owner is TAchievementItem then
     end;
   TAchievementItem(Cbx.Owner).Refresh(Ach);
@@ -163,10 +163,10 @@ begin
   Align := TAlignLayout.Top;
   Height := 116;
   Width := 640;
-  FApiID := TLabel.Create(Self);
-  FApiID.Parent := Self;
-  FApiID.Width := 500;
-  FApiID.Position.Point := PointF(8, 8);
+  FKey := TLabel.Create(Self);
+  FKey.Parent := Self;
+  FKey.Width := 500;
+  FKey.Position.Point := PointF(8, 8);
 
   FAchName := TLabel.Create(Self);
   FAchName.Parent := Self;
@@ -211,7 +211,7 @@ end;
 procedure TAchievementItem.AddData(const AItem: TSteamAchievement; const BadImage: TBitmap);
 begin
   AItem.OnAchievementUpdated := DoAchievementUpdated;
-  FApiID.Text := AItem.ApiId;
+  FKey.Text := AItem.Key;
   FAchName.Text := AItem.Name;
   FAchDesc.Text := AItem.Desc;
   FHidden.IsChecked := AItem.Hidden;
@@ -256,7 +256,7 @@ begin
       if AValue.Icon <> 0 then
         begin
           Steam.ConvertSteamImage(AValue.Icon, FImage.Bitmap);
-          WriteLnLog('AchUp Event ==> ', 'Updated Image for %s [%s] to %d',[AValue.ApiId, FApiID.Text, AValue.Icon]);
+          WriteLnLog('AchUp Event ==> ', 'Updated Image for %s [%s] to %d',[AValue.Key, FKey.Text, AValue.Icon]);
         end;
     end;
 

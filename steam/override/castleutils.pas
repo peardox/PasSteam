@@ -23,5 +23,7 @@ begin
   System.GetMem(Result, Size);
 end;
 
+initialization
+  SetMultiByteConversionCodePage(CP_UTF8);
 
 end.

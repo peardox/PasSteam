@@ -36,6 +36,13 @@ type
 
   TAchievementUpdatedEvent = procedure(AValue: TSteamAchievement; const WhatChanged: TAchievementChanged) of object;
 
+  { TSteamBitmap is a non-standard and hungry 24 bit RGBA data format used by Steam
+
+    It is necessary to convert this format to something your Application can use.
+
+    Ideally these bitmaps need caching (TBD)
+  }
+
   TSteamBitmap = class
   strict private
     FIsValid: Boolean;
@@ -48,7 +55,7 @@ type
     destructor Destroy; override;
     procedure SetImageFormat(const ImWidth, ImHeight, BytesPerPixel: Integer);
     function GetImageMemorySize(): UInt64;
-    procedure SetImage(const AImage: PByteArray);
+    procedure SetSteamImage(const AImage: PByteArray);
     property IsValid: Boolean read FIsValid write FIsValid;
     property Width: Integer read FWidth;
     property Height: Integer read FHeight;
@@ -57,12 +64,24 @@ type
   end;
 
   TCastleSteam = class;
+  // Forward declaration for TSteamAchievement.Create
+
+  { TSteamAchievement encapulates a Steam Achievement
+
+    The only value Steam REALLY cares about is the Achievement Key ID (FKey)
+
+    Steam does, however, allow the retrieval of a lot of other Achievement-related
+    fields that may be useful to some developer
+
+    The only thing you can really do with an Achievement is set or clear it
+    nence only the Achieved property is writable
+  }
 
   TSteamAchievement = Class
     strict private
       FOwner: TObject;
       FAchId: UInt32;
-      FApiId: String;
+      FKey: String;
       FName: String;
       FDesc: String;
       FHidden: Boolean;
@@ -72,24 +91,85 @@ type
       FOnAchievementUpdated: TAchievementUpdatedEvent;
       procedure SetAchieved(const AChecked: Boolean);
     protected
+      function GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
+      { Makes a bunch of Steam API calls to fill in all the properties }
       procedure Populate(SteamUserStats: Pointer; AchievementId: UInt32);
     public
       constructor Create(AOwner: TCastleSteam);
       destructor Destroy; override;
-      function GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
-      property ApiId: String read FApiId;
+      { Read-Only : The Achievement API Key - Really important to steam }
+      property Key: String read FKey;
+      { Read-Only : The Achievement Name }
       property Name: String read FName;
+      { Read-Only : The Achievement Description }
       property Desc: String read FDesc;
+      { Read-Only : If the achievemnt is hidden from the user or not }
       property Hidden: Boolean read FHidden;
+      { This will set or clear the achievment status which will also
+        trigger a Steam API that may send a Steaam Notification to
+        the user that the Achievement has been completed (a little
+        notification window pops-up in game if permitted)
+      }
       property Achieved: Boolean read FAchieved write SetAchieved;
+      { Read-Only : When the Achievement was completed }
       property DoneDate: TDateTime read FDoneDate;
+      { Read-Only : Achievement Icon handle, used to fetch the actual image.
+        This may trigger an asynchronous fetch if the actual bitmap isn't
+        available (which we catch and handle to for you)
+      }
       property Icon: CInt read FIcon write FIcon;
       property OnAchievementUpdated: TAchievementUpdatedEvent
         read FOnAchievementUpdated write FOnAchievementUpdated;
 
   end;
 
-  TSteamAchievementList = {$ifdef fpc}specialize{$endif} TObjectList<TSteamAchievement>;
+  { TIndexedAchievementList is a replacement for the previous TStringList version
+
+    The class maintains two a TObjectlist (FList) that owns all the
+    TSteamAchievement objects and a TObjectDictionary that owns nothing
+    but references the Achievements by their Api Key ID (FKey)
+
+    The overhead is minimal as there's only one set of TSteamAchievement Objects
+
+    The benefit is that the Achievements can be iterated over in a loop or
+    directly accessed by their Key via FindKey which is the way that Steam
+    refers to the Achievements in any API calls
+
+    Strictly speaking this object is for convenience only as the Steam API
+    really expects you to already know all the Key IDs anyway
+  }
+  TIndexedAchievementList = class
+  strict private
+    FList: {$ifdef fpc}specialize{$endif} TObjectList<TSteamAchievement>;
+    FDict: {$ifdef fpc}specialize{$endif} TObjectDictionary<String, TSteamAchievement>;
+    FCapacity: NativeInt;
+    function GetObject(Index: Integer): TSteamAchievement;
+    function GetKey(Index: Integer): String;
+    procedure SetObject(Index: Integer; AValue: TSteamAchievement);
+    function GetObjectCount: NativeInt;
+    procedure SetCapacity(const AValue: NativeInt);
+  public
+    { Creates the list then dict }
+    constructor Create;
+    { Destroys the dict then the list }
+    destructor Destroy; override;
+    { Add a new TSteamAchievement to both the list and dict }
+    function Add(const Value: TSteamAchievement): NativeInt;
+    { Returns the TSteamAchievement for a specified API Key or Nil of it doesn't exist}
+    function FindKey(const AKey: String): TSteamAchievement;
+    { Clear dict then list }
+    procedure Clear;
+    { Set the Capacity of list and dict }
+    property Capacity: NativeInt read FCapacity write SetCapacity;
+    { Returns number of items in list/dict }
+    property Count: NativeInt read GetObjectCount;
+    { For TStringList-like friendliness }
+    property Strings[Index: Integer]: String read GetKey;
+    { Get or Set TSteamAchievement by numerical index. Default property }
+    property Objects[Index: Integer]: TSteamAchievement read GetObject write SetObject; default;
+  end;
+
+  TSteamAchievementList = TIndexedAchievementList;
 
   { Integration with Steam.
     See @url(https://castle-engine.io/steam Steam and Castle Game Engine documentation)
@@ -406,7 +486,8 @@ procedure TCastleSteam.CallbackUserAchievementIconFetched(
   P: PUserAchievementIconFetched);
 var
   S: String;
-  F, I : Integer;
+  I: Integer;
+  Found: TSteamAchievement;
 begin
   if P{$ifdef fpc}^{$endif}.m_nIconHandle = 0 then
     begin
@@ -419,25 +500,17 @@ begin
   S := String(P{$ifdef fpc}^{$endif}.m_rgchAchievementName);
   if Length(S) > 0 then
     begin
-      F := -1;
-      // Absolutely horrible linear search
-      for I := 0 to FAchievements.Count - 1 do
-        begin
-        if FAchievements[I].ApiId = S then
-          begin
-            F := I;
-            Break;
-          end;
-        end;
+      Found := FAchievements.FindKey(S);
+      if Found <> Nil then
 
-      if F <> -1 then
         begin
           {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-          WriteLnLog('Image ==>', 'Fetched UserAchievementIcon from Steam for %s with Handle %d',[S, (P^).m_nIconHandle]);
+          WriteLnLog('Image ==>', 'Fetched UserAchievementIcon from Steam for %s with Handle %d',
+          [S, (P^).m_nIconHandle]);
           {$endif}
-          FAchievements[F].Icon := P{$ifdef fpc}^{$endif}.m_nIconHandle;
-          if Assigned(FAchievements[F].OnAchievementUpdated) then
-            FAchievements[F].OnAchievementUpdated(FAchievements[F], ImageChanged);
+          Found.Icon := P{$ifdef fpc}^{$endif}.m_nIconHandle;
+          if Assigned(Found.OnAchievementUpdated) then
+            Found.OnAchievementUpdated(Found, ImageChanged);
         end;
 
     end;
@@ -488,9 +561,6 @@ begin
   R := SteamAPI_ISteamUtils_GetImageSize(SteamUtils, ImageHandle, @ImWidth, @ImHeight);
   if R then
     begin
-      {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-//      WriteLnLog('Steam', 'GetImageSize : Width : %d, Height : %d', [ImWidth, ImHeight]);
-      {$endif}
       Result := TSteamBitmap.Create;
       Result.SetImageFormat(ImWidth, ImHeight, 4);
       try
@@ -498,7 +568,7 @@ begin
         Buf := GetMem(BufSize);
         if SteamAPI_ISteamUtils_GetImageRGBA(SteamUtils, ImageHandle, Buf, BufSize) then
           begin
-            Result.SetImage(Buf);
+            Result.SetSteamImage(Buf);
             Result.IsValid := True;
           end;
       finally
@@ -790,11 +860,11 @@ end;
 
 function TSteamAchievement.GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
 begin
-  Result := SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, PAnsiChar(AnsiString(FApiId)));
+  Result := SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, PAnsiChar(AnsiString(FKey)));
   if Result <> 0 then
     begin
       {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-      WritelnLog('GetAchievementIcon returned Icon Handle %d for %s', [Result, FApiId]);
+      WritelnLog('GetAchievementIcon returned Icon Handle %d for %s', [Result, FKey]);
       {$endif}
     end
   else
@@ -810,7 +880,7 @@ var
 begin
   FAchId := AchievementId;
   pchName := SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, AchievementId);
-  FApiId := String(pchName);
+  FKey := String(pchName);
   FName := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'name'));
   FDesc := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'desc'));
   pchHidden := SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'hidden');
@@ -834,9 +904,9 @@ begin
 
   FAchieved := AChecked;
   if FAchieved then
-    TCastleSteam(FOwner).SetAchievement(FApiId)
+    TCastleSteam(FOwner).SetAchievement(FKey)
   else
-    TCastleSteam(FOwner).ClearAchievement(FApiId);
+    TCastleSteam(FOwner).ClearAchievement(FKey);
   NIcon := GetIcon(TCastleSteam(FOwner).ISteamUserStats, FIcon);
   if (NIcon <> FIcon) then
     begin
@@ -865,7 +935,7 @@ begin
   Result := FWidth * FHeight * FBPP;
 end;
 
-procedure TSteamBitmap.SetImage(const AImage: PByteArray);
+procedure TSteamBitmap.SetSteamImage(const AImage: PByteArray);
 begin
   FImage := AImage;
 end;
@@ -875,6 +945,68 @@ begin
   FWidth := ImWidth;
   FHeight := ImHeight;
   FBPP := BytesPerPixel;
+end;
+
+{ TIndexedAchievementList }
+
+function TIndexedAchievementList.Add(const Value: TSteamAchievement): NativeInt;
+begin
+  Result := FList.Add(Value);
+  FDict.Add(Value.Key, Value);
+end;
+
+procedure TIndexedAchievementList.Clear;
+begin
+  FDict.Clear;
+  FList.Clear;
+end;
+
+constructor TIndexedAchievementList.Create;
+begin
+  FList := TObjectList<TSteamAchievement>.Create;
+  FDict := TObjectDictionary<String, TSteamAchievement>.Create();
+end;
+
+destructor TIndexedAchievementList.Destroy;
+begin
+  FreeAndNil(FDict);
+  FreeAndNil(FList);
+  inherited;
+end;
+
+function TIndexedAchievementList.GetKey(Index: Integer): String;
+begin
+  Result := FList[Index].Key;
+end;
+
+function TIndexedAchievementList.GetObject(Index: Integer): TSteamAchievement;
+begin
+  Result := FList[Index];
+end;
+
+function TIndexedAchievementList.FindKey(
+  const AKey: String): TSteamAchievement;
+begin
+  if not FDict.TryGetValue(AKey, Result) then
+    Result := Nil;
+end;
+
+function TIndexedAchievementList.GetObjectCount: NativeInt;
+begin
+  Result := FList.Count;
+end;
+
+procedure TIndexedAchievementList.SetCapacity(const AValue: NativeInt);
+begin
+  FCapacity := AValue;
+  FList.Capacity := FCapacity;
+  FDict.Capacity := FCapacity;
+end;
+
+procedure TIndexedAchievementList.SetObject(Index: Integer;
+  AValue: TSteamAchievement);
+begin
+  FList[Index] := AValue;
 end;
 
 end.
