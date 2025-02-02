@@ -247,6 +247,9 @@ type
     { Steam application id, given when creating this. }
     property AppId: TAppId read FAppId;
 
+    { The AppID Steam thinks we're using - this _may_ be different from AppID }
+    function GetSteamAppID: CInt;
+
     { Do we have Steam integration available.
 
       If @true, this means that Steam dynamic library was found,
@@ -467,9 +470,12 @@ begin
 
   InitializeSteamLibrary;
   CheckEnabledAndRestart;
-  InitialSteamCalls;
+  if FEnabled then
+    begin
+      InitialSteamCalls;
+      ApplicationProperties.OnUpdate.Add({$ifdef FPC}@{$endif} Update);
+    end;
 
-  ApplicationProperties.OnUpdate.Add({$ifdef FPC}@{$endif} Update);
 end;
 
 destructor TCastleSteam.Destroy;
@@ -486,7 +492,6 @@ procedure TCastleSteam.CallbackUserAchievementIconFetched(
   P: PUserAchievementIconFetched);
 var
   S: String;
-  I: Integer;
   Found: TSteamAchievement;
 begin
   if P{$ifdef fpc}^{$endif}.m_nIconHandle = 0 then
@@ -796,6 +801,13 @@ begin
       StoreStats := false;
 end;
 
+function TCastleSteam.GetSteamAppID: CInt;
+begin
+  if not Enabled then
+    Exit(-1);
+  Result := SteamAPI_ISteamUtils_GetAppID(SteamUtils);
+end;
+
 function TCastleSteam.Country: String;
 begin
   if not Enabled then
@@ -877,10 +889,24 @@ var
   pchHidden: PAnsiChar;
   bAchieved: TSteamBool;
   uDate: UInt32;
+  {
+  MinI, MaxI: Int32;
+  MinF, MaxF: Single;
+  }
 begin
   FAchId := AchievementId;
   pchName := SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, AchievementId);
   FKey := String(pchName);
+  {
+  if SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32(SteamUserStats, pchName, @MinI, @MaxI) then
+    begin
+      WritelnLog('Progress Limits ==>', 'Name = %s, Min = %d, Max = %d',[FKey, MinI, MaxI]);
+    end;
+  if SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat(SteamUserStats, pchName, @MinF, @MaxF) then
+    begin
+      WritelnLog('Progress Limits ==>', 'Name = %s, Min = %f, Max = %f',[FKey, MinF, MaxF]);
+    end;
+  }
   FName := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'name'));
   FDesc := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'desc'));
   pchHidden := SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'hidden');

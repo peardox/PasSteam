@@ -47,6 +47,7 @@ type
     Label3: TLabel;
     CheckBox1: TCheckBox;
     CheckBox2: TCheckBox;
+    Label4: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
     procedure AppUpdate(Sender: TObject);
@@ -64,13 +65,13 @@ var
   Steam: TSteamApp;
 
 const
-  AppId: Integer = 316790;
+  AppId: Integer = 2060130; // 316790;
 
 implementation
 
 {$R *.fmx}
 
-uses rtti;
+uses IOUtils, RTTI;
 
 procedure TForm1.DoAchieved(Sender: TObject);
 var
@@ -111,13 +112,17 @@ begin
   OutLog := Memo1.Lines;
   Label1.Text := 'Steam - Not Loaded';
   Steam := TSteamApp.Create(AppId);
-  Steam.Interval := 17; // 60 calls per second
-  Steam.OnUserStatsReceived := UserStatsReceived;
-  Steam.OnAppUpdate := AppUpdate;
+  if Steam.Enabled then
+    begin
+      Steam.Interval := 17; // 60 calls per second
+      Steam.OnUserStatsReceived := UserStatsReceived;
+      Steam.OnAppUpdate := AppUpdate;
+    end;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
+  IOUtils.TFile.WriteAllText('lastrun.log', Memo1.Text);
   FreeAndNil(Steam);
 end;
 
@@ -128,8 +133,10 @@ var
 begin
   if Assigned(Steam) then
     begin
-      Label2.Text := 'Language : ' + Steam.Language;
+      Label2.Text := 'AppID : ' + IntToStr(Steam.GetSteamAppID);
       Label3.Text := 'Build : ' + IntToStr(Steam.BuildId);
+      Label4.Text := 'Language : ' + Steam.Language;
+
       Checkbox1.Text := 'Running On SteamDeck';
       CheckBox1.IsChecked := Steam.RunningOnSteamDeck;
       Checkbox2.Text := 'Overlay Enabled';

@@ -109,7 +109,7 @@ type
   PSteamBool = ^TSteamBool;
   TCallbackBool = LongBool;
   PCallbackBool = ^TCallbackBool;
-
+  PInt32 = ^CInt;
 const
   { Versions of Steam API interfaces.
     Correspond to Steamworks 1.xx controlled by API_XXX with fallback to 1.57 version. }
@@ -311,32 +311,37 @@ var
   SteamAPI_ISteamClient_SetWarningMessageHook: procedure (SteamClient: Pointer; WarningMessageHook: SteamAPIWarningMessageHook); CDecl;
   // SteamUtils has no SteamUser
   SteamAPI_ISteamClient_GetISteamUtils: function (SteamClient: Pointer; SteamPipeHandle: HSteamPipe; const SteamUtilsInterfaceVersion: PAnsiChar): Pointer; CDecl;
-  // Steam_ISteamClient_GetISteam...... use SteamUser
-  SteamAPI_ISteamClient_GetISteamUser:      function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  // Steam_ISteamClient_GetISteam...... use SteamClient pointer
   SteamAPI_ISteamClient_GetISteamApps:      function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamAppsInterfaceVersion: PAnsiChar): Pointer; CDecl;
-  SteamAPI_ISteamClient_GetISteamUserStats: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
   SteamAPI_ISteamClient_GetISteamFriends:   function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamFriendsInterfaceVersion: PAnsiChar): Pointer; CDecl;
   SteamAPI_ISteamClient_GetISteamInput:     function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamInputInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamUser:      function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamUserStats: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
 
   // ISteamUserStats
+  SteamAPI_ISteamUserStats_ClearAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; Achieved: PSteamBool): TSteamBool; CDecl;
+  // Returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
+  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: PUInt32): TSteamBool; CDecl;
+  // Returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
+  SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const AchievementKey: PAnsiChar ): PAnsiChar; CDecl;
+  // Returns a handle for the Achievement's image - needs further processing via callback
+  SteamAPI_ISteamUserStats_GetAchievementIcon: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): UInt32; CDecl;
+  // Returns string-ID of the achievement, not a human readable name
+  SteamAPI_ISteamUserStats_GetAchievementName: function (SteamUserStats: Pointer; AchievementId: UInt32 ): PAnsiChar; CDecl;
+  // Not Documented but in headers
+  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PInt32; const pnMaxProgress: PInt32): TSteamBool; CDecl;
+  // Not Documented but in headers
+  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PSingle; const pnMaxProgress: PSingle): TSteamBool; CDecl;
+
+  SteamAPI_ISteamUserStats_GetNumAchievements: function (SteamUserStats: Pointer): UInt32; CDecl;
+  // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress
+  SteamAPI_ISteamUserStats_IndicateAchievementProgress: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; CurrentProgress: UInt32; MaxProgress: UInt32): TSteamBool; CDecl;
   {$if not defined(USE_TESTING_API)}
   SteamAPI_ISteamUserStats_RequestCurrentStats: function (SteamUserStats: Pointer): TSteamBool; CDecl;
   {$endif}
-
-  SteamAPI_ISteamUserStats_GetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; Achieved: PSteamBool): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_RequestUserStats: function (SteamUserStats: Pointer; const SteamIDUser: CSteamID): TSteamAPICall; CDecl;
   SteamAPI_ISteamUserStats_SetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
-  SteamAPI_ISteamUserStats_ClearAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
-  SteamAPI_ISteamUserStats_GetNumAchievements: function (SteamUserStats: Pointer): UInt32; CDecl;
-  // Returns string-ID of the achievement, not a human readable name
-  SteamAPI_ISteamUserStats_GetAchievementName: function (SteamUserStats: Pointer; AchievementId: UInt32 ): PAnsiChar; CDecl;
-  // Returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
-  SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const AchievementKey: PAnsiChar ): PAnsiChar; CDecl;
-  // Returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
-  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: PUInt32): TSteamBool; CDecl;
-  // Returns a handle for the Achievement's image - needs further processing via callback
-  SteamAPI_ISteamUserStats_GetAchievementIcon: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): UInt32; CDecl;
-  // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress
-  SteamAPI_ISteamUserStats_IndicateAchievementProgress: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; CurrentProgress: UInt32; MaxProgress: UInt32): TSteamBool; CDecl;
   // Call this after changing stats or achievements
   SteamAPI_ISteamUserStats_StoreStats: function (SteamUserStats: Pointer): TSteamBool; CDecl;
 
@@ -351,6 +356,8 @@ var
   // Unversioned accessor to get the current version.
   // In Pascal translation, this is just an alias to 'SteamAPI_SteamUtils_v' + VersionSteamUtils.
   SteamAPI_SteamUtils: function (): ISteamUtils; CDecl;
+  // Returns the AppID from Steam (not neccesarily what we tell it the value is)
+  SteamAPI_ISteamUtils_GetAppID: function (Self: Pointer): CInt; CDecl;
   // Returns the Raw Bitmap Data in pubDest of image Handle iImage. Must call GetImageSize
   // before calling thius in order to allocate memory for buffer that will be filled
   // the destination buffer size should be 4 * height * width * sizeof(char)
@@ -448,26 +455,33 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_RegisterCallback) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_UnregisterCallback) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamApps) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUtils) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamInput) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUtils) := nil;
+
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat) := nil;
+
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := nil;
   {$if not defined(USE_TESTING_API)}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := nil;
   {$endif}
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestUserStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := nil;
+
   Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamUtils) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetAppID) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageRGBA) := Nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageSize) := Nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetIPCountry) := nil;
@@ -513,34 +527,41 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ManualDispatch_GetNextCallback) := SteamLibrary.Symbol('SteamAPI_ManualDispatch_GetNextCallback');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ManualDispatch_FreeLastCallback) := SteamLibrary.Symbol('SteamAPI_ManualDispatch_FreeLastCallback');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ManualDispatch_GetAPICallResult) := SteamLibrary.Symbol('SteamAPI_ManualDispatch_GetAPICallResult');
-    Pointer({$ifndef FPC}@{$endif} SteamInternal_CreateInterface) := SteamLibrary.Symbol('SteamInternal_CreateInterface');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_GetHSteamUser) := SteamLibrary.Symbol('SteamAPI_GetHSteamUser');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_GetHSteamPipe) := SteamLibrary.Symbol('SteamAPI_GetHSteamPipe');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_RegisterCallback) := SteamLibrary.Symbol('SteamAPI_RegisterCallback');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_UnregisterCallback) := SteamLibrary.Symbol('SteamAPI_UnregisterCallback');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := SteamLibrary.Symbol('SteamAPI_ISteamClient_SetWarningMessageHook');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUser');
+
+    Pointer({$ifndef FPC}@{$endif} SteamInternal_CreateInterface) := SteamLibrary.Symbol('SteamInternal_CreateInterface');
+
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamApps) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamApps');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUserStats');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamFriends');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUtils) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUtils');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamInput) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamInput');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUser) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUser');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUserStats');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamUtils) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamUtils');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := SteamLibrary.Symbol('SteamAPI_ISteamClient_SetWarningMessageHook');
+
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_ClearAchievement');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievement');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementIcon');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementName');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetNumAchievements');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_IndicateAchievementProgress');
     {$if not defined(USE_TESTING_API)}
     // RequestCurrentStats removeded in 1.61
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
     {$endif}
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievement');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestUserStats');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_SetAchievement');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_ClearAchievement');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetNumAchievements');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementName');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementIcon');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_IndicateAchievementProgress');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_StoreStats');
     // alias to versioned entry point
     Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamUtils) := SteamLibrary.Symbol('SteamAPI_SteamUtils_v' + VersionSteamUtils);
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetAppID) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_GetAppID');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageRGBA) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_GetImageRGBA');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetImageSize) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_GetImageSize');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUtils_GetIPCountry) := SteamLibrary.Symbol('SteamAPI_ISteamUtils_GetIPCountry');
