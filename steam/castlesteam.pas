@@ -125,9 +125,12 @@ type
 
   { TIndexedAchievementList is a replacement for the previous TStringList version
 
-    The class maintains two a TObjectlist (FList) that owns all the
-    TSteamAchievement objects and a TObjectDictionary that owns nothing
-    but references the Achievements by their Api Key ID (FKey)
+    This is enabled by a Generic class (TIndexedObjectList) that mixes
+    a TObjectList with a TObjectDictionary
+
+    The TObjectlist (FList) owns all the TSteamAchievement objects and
+    the TObjectDictionary (FDict) owns nothing but references the Achievements
+    by their Api Key ID (FKey)
 
     The overhead is minimal as there's only one set of TSteamAchievement Objects
 
@@ -138,14 +141,14 @@ type
     Strictly speaking this object is for convenience only as the Steam API
     really expects you to already know all the Key IDs anyway
   }
-  TIndexedAchievementList = class
+
+  TIndexedObjectList<V: class> = class
   strict private
-    FList: {$ifdef fpc}specialize{$endif} TObjectList<TSteamAchievement>;
-    FDict: {$ifdef fpc}specialize{$endif} TObjectDictionary<String, TSteamAchievement>;
+    FList: {$ifdef fpc}specialize{$endif} TObjectList<V>;
+    FDict: {$ifdef fpc}specialize{$endif} TObjectDictionary<String, V>;
     FCapacity: NativeInt;
-    function GetObject(Index: Integer): TSteamAchievement;
-    function GetKey(Index: Integer): String;
-    procedure SetObject(Index: Integer; AValue: TSteamAchievement);
+    function GetObject(Index: Integer): V;
+    procedure SetObject(Index: Integer; AValue: V);
     function GetObjectCount: NativeInt;
     procedure SetCapacity(const AValue: NativeInt);
   public
@@ -153,23 +156,21 @@ type
     constructor Create;
     { Destroys the dict then the list }
     destructor Destroy; override;
-    { Add a new TSteamAchievement to both the list and dict }
-    function Add(const Value: TSteamAchievement): NativeInt;
-    { Returns the TSteamAchievement for a specified API Key or Nil of it doesn't exist}
-    function FindKey(const AKey: String): TSteamAchievement;
+    { Add a new TObj to both the list and dict }
+    function Add(const AKey: String; const Value: V): NativeInt;
+    { Returns the TObj for a specified API Key or Nil of it doesn't exist}
+    function FindKey(const AKey: String): V;
     { Clear dict then list }
     procedure Clear;
     { Set the Capacity of list and dict }
     property Capacity: NativeInt read FCapacity write SetCapacity;
     { Returns number of items in list/dict }
     property Count: NativeInt read GetObjectCount;
-    { For TStringList-like friendliness }
-    property Strings[Index: Integer]: String read GetKey;
-    { Get or Set TSteamAchievement by numerical index. Default property }
-    property Objects[Index: Integer]: TSteamAchievement read GetObject write SetObject; default;
+    { Get or Set TObj by numerical index. Default property }
+    property Objects[Index: Integer]: V read GetObject write SetObject; default;
   end;
 
-  TSteamAchievementList = TIndexedAchievementList;
+  TSteamAchievementList = TIndexedObjectList<TSteamAchievement>;
 
   { Integration with Steam.
     See @url(https://castle-engine.io/steam Steam and Castle Game Engine documentation)
@@ -547,7 +548,7 @@ begin
       begin
         SteamAchievement := TSteamAchievement.Create(Self);
         SteamAchievement.Populate(SteamUserStats, I);
-        FAchievements.Add(SteamAchievement);
+        FAchievements.Add(SteamAchievement.Key, SteamAchievement);
       end;
   WriteLnLog('Steam Achievements: %d', [Achievements.Count]);
 end;
@@ -889,24 +890,10 @@ var
   pchHidden: PAnsiChar;
   bAchieved: TSteamBool;
   uDate: UInt32;
-  {
-  MinI, MaxI: Int32;
-  MinF, MaxF: Single;
-  }
 begin
   FAchId := AchievementId;
   pchName := SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, AchievementId);
   FKey := String(pchName);
-  {
-  if SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32(SteamUserStats, pchName, @MinI, @MaxI) then
-    begin
-      WritelnLog('Progress Limits ==>', 'Name = %s, Min = %d, Max = %d',[FKey, MinI, MaxI]);
-    end;
-  if SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat(SteamUserStats, pchName, @MinF, @MaxF) then
-    begin
-      WritelnLog('Progress Limits ==>', 'Name = %s, Min = %f, Max = %f',[FKey, MinF, MaxF]);
-    end;
-  }
   FName := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'name'));
   FDesc := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'desc'));
   pchHidden := SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'hidden');
@@ -973,64 +960,59 @@ begin
   FBPP := BytesPerPixel;
 end;
 
-{ TIndexedAchievementList }
+{ TIndexedObjectList<TObj> }
 
-function TIndexedAchievementList.Add(const Value: TSteamAchievement): NativeInt;
+function TIndexedObjectList<V>.Add(
+  const AKey: String; const Value: V): NativeInt;
 begin
   Result := FList.Add(Value);
-  FDict.Add(Value.Key, Value);
+  FDict.Add(AKey, Value);
 end;
 
-procedure TIndexedAchievementList.Clear;
+procedure TIndexedObjectList<V>.Clear;
 begin
   FDict.Clear;
   FList.Clear;
 end;
 
-constructor TIndexedAchievementList.Create;
+constructor TIndexedObjectList<V>.Create;
 begin
-  FList := TObjectList<TSteamAchievement>.Create;
-  FDict := TObjectDictionary<String, TSteamAchievement>.Create();
+  FList := TObjectList<V>.Create;
+  FDict := TObjectDictionary<String, V>.Create();
 end;
 
-destructor TIndexedAchievementList.Destroy;
+destructor TIndexedObjectList<V>.Destroy;
 begin
   FreeAndNil(FDict);
   FreeAndNil(FList);
   inherited;
 end;
 
-function TIndexedAchievementList.GetKey(Index: Integer): String;
-begin
-  Result := FList[Index].Key;
-end;
-
-function TIndexedAchievementList.GetObject(Index: Integer): TSteamAchievement;
-begin
-  Result := FList[Index];
-end;
-
-function TIndexedAchievementList.FindKey(
-  const AKey: String): TSteamAchievement;
+function TIndexedObjectList<V>.FindKey(
+  const AKey: String): V;
 begin
   if not FDict.TryGetValue(AKey, Result) then
     Result := Nil;
 end;
 
-function TIndexedAchievementList.GetObjectCount: NativeInt;
+function TIndexedObjectList<V>.GetObject(Index: Integer): V;
+begin
+  Result := FList[Index];
+end;
+
+function TIndexedObjectList<V>.GetObjectCount: NativeInt;
 begin
   Result := FList.Count;
 end;
 
-procedure TIndexedAchievementList.SetCapacity(const AValue: NativeInt);
+procedure TIndexedObjectList<V>.SetCapacity(const AValue: NativeInt);
 begin
   FCapacity := AValue;
   FList.Capacity := FCapacity;
   FDict.Capacity := FCapacity;
 end;
 
-procedure TIndexedAchievementList.SetObject(Index: Integer;
-  AValue: TSteamAchievement);
+procedure TIndexedObjectList<V>.SetObject(Index: Integer; AValue: V);
 begin
   FList[Index] := AValue;
 end;

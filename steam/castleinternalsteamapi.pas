@@ -330,9 +330,9 @@ var
   // Returns string-ID of the achievement, not a human readable name
   SteamAPI_ISteamUserStats_GetAchievementName: function (SteamUserStats: Pointer; AchievementId: UInt32 ): PAnsiChar; CDecl;
   // Not Documented but in headers
-  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PInt32; const pnMaxProgress: PInt32): TSteamBool; CDecl;
-  // Not Documented but in headers
   SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PSingle; const pnMaxProgress: PSingle): TSteamBool; CDecl;
+  // Not Documented but in headers
+  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PInt32; const pnMaxProgress: PInt32): TSteamBool; CDecl;
 
   SteamAPI_ISteamUserStats_GetNumAchievements: function (SteamUserStats: Pointer): UInt32; CDecl;
   // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress
@@ -340,6 +340,8 @@ var
   {$if not defined(USE_TESTING_API)}
   SteamAPI_ISteamUserStats_RequestCurrentStats: function (SteamUserStats: Pointer): TSteamBool; CDecl;
   {$endif}
+  SteamAPI_ISteamUserStats_GetStatFloat: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pData: PSingle): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetStatInt32: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pData: PInt32): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_RequestUserStats: function (SteamUserStats: Pointer; const SteamIDUser: CSteamID): TSteamAPICall; CDecl;
   SteamAPI_ISteamUserStats_SetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
   // Call this after changing stats or achievements
@@ -468,14 +470,16 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := nil;
-  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32) := nil;
 
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := nil;
   {$if not defined(USE_TESTING_API)}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := nil;
   {$endif}
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatFloat) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatInt32) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestUserStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := nil;
@@ -548,14 +552,16 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementIcon');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementName) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementName');
-    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetNumAchievements');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_IndicateAchievementProgress');
     {$if not defined(USE_TESTING_API)}
     // RequestCurrentStats removeded in 1.61
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
     {$endif}
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatFloat) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetStatFloat');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatInt32) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetStatInt32');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestUserStats');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_SetAchievement');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_StoreStats');
