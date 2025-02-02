@@ -13,7 +13,8 @@ uses
   castlefilesutils in 'steam\override\castlefilesutils.pas',
   castlelog in 'steam\override\castlelog.pas',
   castlestringutils in 'steam\override\castlestringutils.pas',
-  castleutils in 'steam\override\castleutils.pas';
+  castleutils in 'steam\override\castleutils.pas',
+  steamtypes in 'steam\steamtypes.pas';
 
 {$R *.res}
 

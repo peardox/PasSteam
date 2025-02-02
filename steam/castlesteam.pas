@@ -24,7 +24,7 @@ interface
 
 {$define CASTLE_DEBUG_STEAM_API_TESTING}
 
-uses Classes, CTypes, SysUtils, {SteamTypes,}
+uses Classes, CTypes, SysUtils, SteamTypes,
   {$ifndef fpc}System.Generics.Collections,{$else}Contnrs,Generics.Collections,{$endif}
   CastleInternalSteamApi;
 
@@ -371,14 +371,19 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     { Is Steam library available at runtime. }
     if SteamLibrary <> nil then
     begin
+     {$if STEAM_API_VERSION >= 1.61}
+     WriteLnLog('SteamAPI using new');
+     {$elseif STEAM_API_VERSION < 1.61}
+     WriteLnLog('SteamAPI using old');
+     {$endif}
       // Initialize Steam API
-      {$if defined(USE_TESTING_API)}
+      {$if STEAM_API_VERSION >= 1.61}
       if SteamAPI_InitFlat(Nil) = k_ESteamAPIInitResult_OK then
       {$else}
       if SteamAPI_Init() then
       {$endif}
       begin
-        {$if defined(USE_TESTING_API)}
+        {$if STEAM_API_VERSION = 1.61}
         WriteLnLog('SteamAPI with USE_TESTING_API using ' + SteamLibraryName);
         {$else}
         WriteLnLog('SteamAPI using ' + SteamLibraryName);
@@ -447,7 +452,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSERSTATS_INTERFACE_VERSION);
 
     FUserId := SteamAPI_ISteamUser_GetSteamID(SteamUser);
-    {$if not defined(USE_TESTING_API)}
+    {$if STEAM_API_VERSION < 1.61}
     SteamAPI_ISteamUserStats_RequestCurrentStats(SteamUserStats);
     {$else}
     if SteamUserStats <> Nil then

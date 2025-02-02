@@ -319,6 +319,7 @@
         <DCCReference Include="steam\override\castlelog.pas"/>
         <DCCReference Include="steam\override\castlestringutils.pas"/>
         <DCCReference Include="steam\override\castleutils.pas"/>
+        <DCCReference Include="steam\steamtypes.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

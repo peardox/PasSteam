@@ -45,7 +45,7 @@
     that work and a few tricks to make them work properly.
 }
 
-{ USE_TESTING_API allows switching between an established tested API
+{ STEAM_API_VERSION allows switching between an established tested API
   and a newer API that is being tested. It makes upgrading between two
   APIs far simpler as when defined an exception may be raised when
   loading the library. The 'testing' library should be renamed to
@@ -56,8 +56,6 @@
   After successful testing the constants below should all be the same
   until a new API upgrade is required - essentially making the define = !define
   and STEAMLIBVER should be an empty string ('')
-
-  II SHOULD NORMALLY NOT BE DEFINED - note also in CastleSteam while testing
 }
 
 unit CastleInternalSteamApi;
@@ -73,7 +71,7 @@ unit CastleInternalSteamApi;
 interface
 
 uses
-  CTypes, CastleDynLib;
+  CTypes, CastleDynLib, SteamTypes;
 
 { Constants and types. }
 
@@ -113,7 +111,7 @@ type
 const
   { Versions of Steam API interfaces.
     Correspond to Steamworks 1.xx controlled by API_XXX with fallback to 1.57 version. }
-{$if defined(USE_TESTING_API)}
+{$if STEAM_API_VERSION = 1.61}
   STEAMCLIENT_INTERFACE_VERSION = 'SteamClient021'; //< isteamclient.h
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION013'; //< isteamuserstats.h
@@ -127,7 +125,7 @@ const
   VersionSteamFriends = '017'; //< matches STEAMFRIENDS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   VersionSteamInput = '006'; //< matches STEAMINPUT_INTERFACE_VERSION *and* accessor in steam_api_flat.h
   STEAMLIBVER = '_161';
-{$else}
+{$elseif STEAM_API_VERSION = 1.57}
   STEAMCLIENT_INTERFACE_VERSION = 'SteamClient020'; //< isteamclient.h
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION012'; //< isteamuserstats.h
@@ -282,7 +280,7 @@ type
 
 var
   // steam_api.h translation (full documentation at https://partner.steamgames.com/doc/api/steam_api )
-  {$if defined(USE_TESTING_API)}
+  {$if STEAM_API_VERSION >= 1.61}
   SteamAPI_InitFlat: function (pOutErrMsg: PSteamErrMsg): TSteamAPIInitResult; CDecl;
   {$else}
   SteamAPI_Init: function (): TSteamBool; CDecl;
@@ -337,7 +335,7 @@ var
   SteamAPI_ISteamUserStats_GetNumAchievements: function (SteamUserStats: Pointer): UInt32; CDecl;
   // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress
   SteamAPI_ISteamUserStats_IndicateAchievementProgress: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; CurrentProgress: UInt32; MaxProgress: UInt32): TSteamBool; CDecl;
-  {$if not defined(USE_TESTING_API)}
+  {$if STEAM_API_VERSION < 1.61}
   SteamAPI_ISteamUserStats_RequestCurrentStats: function (SteamUserStats: Pointer): TSteamBool; CDecl;
   {$endif}
   SteamAPI_ISteamUserStats_GetStatFloat: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pData: PSingle): TSteamBool; CDecl;
@@ -437,7 +435,7 @@ uses
 
 procedure FinalizeSteamLibrary;
 begin
-  {$if defined(USE_TESTING_API)}
+  {$if STEAM_API_VERSION >= 1.61}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_InitFlat) := nil;
   {$else}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_Init) := nil;
@@ -475,7 +473,7 @@ begin
 
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := nil;
-  {$if not defined(USE_TESTING_API)}
+  {$if STEAM_API_VERSION < 1.61}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := nil;
   {$endif}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatFloat) := nil;
@@ -517,7 +515,7 @@ begin
 
   if SteamLibrary <> nil then
   begin
-    {$if defined(USE_TESTING_API)}
+    {$if STEAM_API_VERSION >= 1.61}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_InitFlat) := SteamLibrary.Symbol('SteamAPI_InitFlat');
     {$else}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_Init) := SteamLibrary.Symbol('SteamAPI_Init');
@@ -556,7 +554,7 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetNumAchievements');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_IndicateAchievementProgress');
-    {$if not defined(USE_TESTING_API)}
+    {$if STEAM_API_VERSION < 1.61}
     // RequestCurrentStats removeded in 1.61
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
     {$endif}
