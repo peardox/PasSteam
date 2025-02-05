@@ -15,8 +15,10 @@ New commits/comments to PR will also make a notification to people watching, but
 Looking at PR contents:
 
     In src/base/castledynlib.pas , it seems your changes didn't merge properly with latest changes in CGE master. Make sure your diff (visible in "Files Changed") contain only things you wanted to change, revert any other changes.
-    Writing AchievementIdAnsi := AnsiString(AchievementId) -- we don't want an explicit typecast in this case, variable names already make it obvious. Leave it as AchievementIdAnsi := AchievementId, as it was.
-    While USE_TESTING_API makes perfect sense for testing, we will want to remove and simplify it all (to just use new API) before merging.
+
+Writing AchievementIdAnsi := AnsiString(AchievementId) -- we don't want an explicit typecast in this case, variable names already make it obvious. Leave it as AchievementIdAnsi := AchievementId, as it was.
+
+While USE_TESTING_API makes perfect sense for testing, we will want to remove and simplify it all (to just use new API) before merging.
 
 
 copy castleinternalsteamapi.pas ..\..\castle-engine\src\services\steam\castleinternalsteamapi.pas

@@ -189,7 +189,7 @@ type
     FOnUserStatsReceived: TNotifyEvent;
     StoreStats: Boolean;
     // Pointers for ISteam....
-    // SteamApps: Pointer;
+    SteamApps: Pointer;
     SteamClient: Pointer;
     SteamFriends: Pointer;
     SteamInput: Pointer;
@@ -430,9 +430,11 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     SteamUser := SteamAPI_ISteamClient_GetISteamUser(
        SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
 
-    // Init SteamApps - returns nil?
-//    SteamApps := SteamAPI_ISteamClient_GetISteamApps(
-//      SteamClient, SteamUserHandle, SteamPipeHandle, STEAMAPPS_INTERFACE_VERSION);
+    // Init SteamApps
+    SteamApps := SteamAPI_ISteamClient_GetISteamApps(
+      SteamClient, SteamUserHandle, SteamPipeHandle, STEAMAPPS_INTERFACE_VERSION);
+    if SteamApps = Nil then
+      WriteLnLog('SteamApps Failed');
 
     // Init SteamFriends
     SteamFriends := SteamAPI_ISteamClient_GetISteamFriends(
@@ -846,21 +848,21 @@ function TCastleSteam.BuildId: Integer;
 begin
   if not Enabled then
     Exit(0);
-  Result := SteamAPI_ISteamApps_GetAppBuildId(SteamAPI_SteamApps());
+  Result := SteamAPI_ISteamApps_GetAppBuildId(SteamApps);
 end;
 
 function TCastleSteam.DlcInstalled(const DlcAppID: TAppId): Boolean;
 begin
   if not Enabled then
     Exit(false);
-  Result := SteamAPI_ISteamApps_BIsDlcInstalled(SteamAPI_SteamApps(), DlcAppID);
+  Result := SteamAPI_ISteamApps_BIsDlcInstalled(SteamApps, DlcAppID);
 end;
 
 function TCastleSteam.Language: String;
 begin
   if not Enabled then
     Exit('');
-  Result := String(SteamAPI_ISteamApps_GetCurrentGameLanguage(SteamAPI_SteamApps()));
+  Result := String(SteamAPI_ISteamApps_GetCurrentGameLanguage(SteamApps));
 end;
 
 { TSteamAchievement }

@@ -45,19 +45,6 @@
     that work and a few tricks to make them work properly.
 }
 
-{ STEAM_API_VERSION allows switching between an established tested API
-  and a newer API that is being tested. It makes upgrading between two
-  APIs far simpler as when defined an exception may be raised when
-  loading the library. The 'testing' library should be renamed to
-  include it's version as a suffix e.g. steam_api64.dll would be
-  renamed to steam_api64_161.dll and STEAMLIBVER, below, set to the matching
-  suffix.
-
-  After successful testing the constants below should all be the same
-  until a new API upgrade is required - essentially making the define = !define
-  and STEAMLIBVER should be an empty string ('')
-}
-
 unit CastleInternalSteamApi;
 
 {$I castleconf.inc}
@@ -108,37 +95,6 @@ type
   TCallbackBool = LongBool;
   PCallbackBool = ^TCallbackBool;
   PInt32 = ^CInt;
-const
-  { Versions of Steam API interfaces.
-    Correspond to Steamworks 1.xx controlled by API_XXX with fallback to 1.57 version. }
-{$if STEAM_API_VERSION = 1.61}
-  STEAMCLIENT_INTERFACE_VERSION = 'SteamClient021'; //< isteamclient.h
-  STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
-  STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION013'; //< isteamuserstats.h
-  STEAMFRIENDS_INTERFACE_VERSION = 'SteamFriends017'; //< isteamuserstats.h
-  STEAMUTILS_INTERFACE_VERSION = 'SteamUtils010'; //< isteamuser.h
-  STEAMINPUT_INTERFACE_VERSION = 'SteamInput006'; //< isteaminput.h
-  STEAMAPPS_INTERFACE_VERSION = 'SteamApps008'; //< isteaminput.h
-  VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamUser = '023'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamFriends = '017'; //< matches STEAMFRIENDS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamInput = '006'; //< matches STEAMINPUT_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  STEAMLIBVER = '_161';
-{$elseif STEAM_API_VERSION = 1.57}
-  STEAMCLIENT_INTERFACE_VERSION = 'SteamClient020'; //< isteamclient.h
-  STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
-  STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION012'; //< isteamuserstats.h
-  STEAMFRIENDS_INTERFACE_VERSION = 'SteamFriends017'; //< isteamuserstats.h
-  STEAMUTILS_INTERFACE_VERSION = 'SteamUtils010'; //< isteamuser.h
-  STEAMINPUT_INTERFACE_VERSION = 'SteamInput006'; //< isteaminput.h
-  VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamApps = '008'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamUser = '023'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamFriends = '017'; //< matches STEAMAPPS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
-  VersionSteamInput = '006'; //< matches accessor in steam_api_flat.h
-  STEAMLIBVER = '';
-{$endif}
 
 type
   SteamAPIWarningMessageHook = procedure (nSeverity: Integer; pchDebugText: PAnsiChar); Cdecl;
@@ -319,6 +275,7 @@ var
   // ISteamUserStats
   SteamAPI_ISteamUserStats_ClearAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_GetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; Achieved: PSteamBool): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementAchievedPercent: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; pflPercent: PSingle): TSteamBool; CDecl;
   // Returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
   SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: PUInt32): TSteamBool; CDecl;
   // Returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
@@ -340,6 +297,7 @@ var
   {$endif}
   SteamAPI_ISteamUserStats_GetStatFloat: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pData: PSingle): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_GetStatInt32: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pData: PInt32): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_RequestGlobalStats: function (SteamUserStats: Pointer; nHistoryDays: CInt): TSteamAPICall; CDecl;
   SteamAPI_ISteamUserStats_RequestUserStats: function (SteamUserStats: Pointer; const SteamIDUser: CSteamID): TSteamAPICall; CDecl;
   SteamAPI_ISteamUserStats_SetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
   // Call this after changing stats or achievements
@@ -382,11 +340,11 @@ var
   // In Pascal translation, this is just an alias to 'SteamAPI_SteamApps_v' + VersionSteamApps.
   SteamAPI_SteamApps: function (): ISteamApps; CDecl;
   // return the buildid of this app, may change at any time based on backend updates to the game
-  SteamAPI_ISteamApps_GetAppBuildId: function (Self: ISteamApps): CInt; CDecl;
+  SteamAPI_ISteamApps_GetAppBuildId: function (Self: Pointer): CInt; CDecl;
   // Takes AppID of DLC and checks if the user owns the DLC & if the DLC is installed
-  SteamAPI_ISteamApps_BIsDlcInstalled: function (Self: ISteamApps; AppID: TAppId): TSteamBool; CDecl;
+  SteamAPI_ISteamApps_BIsDlcInstalled: function (Self: Pointer; AppID: TAppId): TSteamBool; CDecl;
   // returns the current game language
-  SteamAPI_ISteamApps_GetCurrentGameLanguage: function (Self: ISteamApps): PAnsiChar; CDecl;
+  SteamAPI_ISteamApps_GetCurrentGameLanguage: function (Self: Pointer): PAnsiChar; CDecl;
 
   // ISteamFriends
   // A versioned accessor is exported by the library
@@ -464,6 +422,7 @@ begin
 
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAchievedPercent) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := nil;
@@ -478,6 +437,7 @@ begin
   {$endif}
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatFloat) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatInt32) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestGlobalStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestUserStats) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := nil;
@@ -546,6 +506,7 @@ begin
 
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_ClearAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_ClearAchievement');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievement');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAchievedPercent) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementAchievedPercent');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetAchievementIcon) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetAchievementIcon');
@@ -555,11 +516,12 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetNumAchievements) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetNumAchievements');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_IndicateAchievementProgress) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_IndicateAchievementProgress');
     {$if STEAM_API_VERSION < 1.61}
-    // RequestCurrentStats removeded in 1.61
+    // RequestCurrentStats removed in 1.61
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestCurrentStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestCurrentStats');
     {$endif}
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatFloat) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetStatFloat');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_GetStatInt32) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_GetStatInt32');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestGlobalStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestGlobalStats');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_RequestUserStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_RequestUserStats');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_SetAchievement) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_SetAchievement');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamUserStats_StoreStats) := SteamLibrary.Symbol('SteamAPI_ISteamUserStats_StoreStats');
