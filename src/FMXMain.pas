@@ -48,14 +48,23 @@ type
     CheckBox1: TCheckBox;
     CheckBox2: TCheckBox;
     Label4: TLabel;
+    Layout2: TLayout;
+    Button1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure UserStatsReceived(Sender: TObject);
     procedure AppUpdate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure SetAppID(const NewAppId: Integer);
   private
     { Private declarations }
     UpCall: Integer;
+    UpdateID: Boolean;
     procedure DoAchieved(Sender: TObject);
+    procedure StartSteam;
+    procedure StopSteam;
+    procedure MakeGameIndex;
+    procedure SetNewAppID;
+    procedure GetAppID;
   public
     { Public declarations }
   end;
@@ -63,15 +72,36 @@ type
 var
   Form1: TForm1;
   Steam: TSteamApp;
-
-const
   AppId: Integer = 2060130; // 316790;
+  SystemRestart: Boolean;
+
 
 implementation
 
 {$R *.fmx}
 
 uses IOUtils, RTTI;
+
+procedure TForm1.SetNewAppID;
+begin
+  if UpdateID then
+    begin
+      case AppID of
+        2060130: SetAppID(2275430); //  # Steam API Tests
+        2275430: SetAppID(388210); // # Day of the Tentacle Remastered
+        388210: SetAppID(316790); // # Grim Fandango Remastered
+        316790: SetAppID(218620); // # Payday 2
+        218620: SetAppID(573060); // # Logistical
+        573060: SetAppID(228280); // # BG 2
+        228280: SetAppID(1100410); // # Commandos 2
+        1100410: SetAppID(2060130); // # Return to Monkey Island
+      else
+        SetAppID(2060130); // # Return to Monkey Island
+      end;
+    end;
+
+end;
+
 
 procedure TForm1.DoAchieved(Sender: TObject);
 var
@@ -109,7 +139,29 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  GetAppID;
+  UpdateID := False;
   OutLog := Memo1.Lines;
+  StartSteam;
+end;
+
+procedure TForm1.SetAppID(const NewAppId: Integer);
+begin
+  IOUtils.TFile.WriteAllText('steam_appid.txt', IntToStr(NewAppID));
+  // AppID := NewAppID;
+end;
+
+procedure TForm1.GetAppID;
+var
+  StrID: String;
+begin
+  StrID := IOUtils.TFile.ReadAllText('steam_appid.txt');
+  if not TryStrToInt(StrID, AppID) then
+    AppID := 480;
+end;
+
+procedure TForm1.StartSteam;
+begin
   Label1.Text := 'Steam - Not Loaded';
   Steam := TSteamApp.Create(AppId);
   if Steam.Enabled then
@@ -120,10 +172,36 @@ begin
     end;
 end;
 
+procedure TForm1.MakeGameIndex;
+begin
+{
+2060130 # Return to Monkey Island
+2275430 # Steam API Tests
+388210 # Day of the Tentacle Remastered
+316790 # Grim Fandango Remastered
+218620 # Payday 2
+573060 # Logistical
+363860 # Mythforce
+228280 # BG 2
+1100410 # Commandos 2
+}
+// Layout2.
+end;
+
+procedure TForm1.StopSteam;
+begin
+  if Assigned(Steam) then
+    if Steam.Enabled then
+      begin
+        FreeAndNil(Steam);
+      end;
+end;
+
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
+  StopSteam;
+  SetNewAppID;
   IOUtils.TFile.WriteAllText('lastrun.log', Memo1.Text);
-  FreeAndNil(Steam);
 end;
 
 procedure TForm1.UserStatsReceived(Sender: TObject);
@@ -133,7 +211,7 @@ var
 begin
   if Assigned(Steam) then
     begin
-      Label2.Text := 'AppID : ' + IntToStr(Steam.GetSteamAppID);
+      Label2.Text := 'AppID : ' + IntToStr(AppID);
       Label3.Text := 'Build : ' + IntToStr(Steam.BuildId);
       Label4.Text := 'Language : ' + Steam.Language;
 
@@ -146,6 +224,7 @@ begin
       Inc(UpCall);
 
       WriteLnLog('Event ==> ', 'vsbAch.BeginUpdate');
+//      vsbAch.DeleteChildren;
       vsbAch.BeginUpdate;
       for I := 0 to Steam.Achievements.Count - 1 do
         begin

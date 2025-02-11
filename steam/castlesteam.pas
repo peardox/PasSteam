@@ -218,6 +218,7 @@ type
       As of 1.61 Stats are no longer async so this callback would not happen
       without this setter }
     procedure SetOnUserStatsReceived(const AValue: TNotifyEvent);
+    function SteamVerifyLoad(P: Pointer; const S: String): Boolean;
   public
     function GetFriendImageHandle(const FriendID: CUserID; const Size: TIconSize = IconLarge): CInt;
     function GetSteamBitmap(const ImageHandle: CInt): TSteamBitmap;
@@ -365,9 +366,11 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     It may also restart the game through Steam if it was run through exe,
     which means it will Halt the current process. }
   procedure CheckEnabledAndRestart;
+  var
+    InitMsg: Array[0..1023] of Char;
   begin
+    //SetLength(InitMsg, 1024);
     FEnabled := false;
-
     { Is Steam library available at runtime. }
     if SteamLibrary <> nil then
     begin
@@ -378,7 +381,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
      {$endif}
       // Initialize Steam API
       {$if STEAM_API_VERSION >= 1.61}
-      if SteamAPI_InitFlat(Nil) = k_ESteamAPIInitResult_OK then
+      if SteamAPI_InitFlat(@InitMsg) = k_ESteamAPIInitResult_OK then
       {$else}
       if SteamAPI_Init() then
       {$endif}
@@ -401,7 +404,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
           WriteLnLog('The app was started through Steam (or runs in developer mode with steam_appid.txt), Steam integration enabled OK.');
         end;
       end else
-        WriteLnWarning('SteamAPI_Init failed. This means Steam does not run in the background, but you run the application in development mode (with steam_appid.txt). In this case Steam integration will not work. See https://castle-engine.io/steam for information how to test the Steam integration.');
+        WriteLnWarning(String(PAnsiChar(@InitMsg)) + SLineBreak + 'SteamAPI_Init failed. This means Steam does not run in the background, but you run the application in development mode (with steam_appid.txt). In this case Steam integration will not work. See https://castle-engine.io/steam for information how to test the Steam integration.');
     end else
     begin
       {$warnings off} // ignore FPC warnings about unreachable code, since SteamLibraryName is constant
@@ -429,29 +432,33 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     // Init SteamUser
     SteamUser := SteamAPI_ISteamClient_GetISteamUser(
        SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
+    SteamVerifyLoad(SteamApps, 'SteamApps');
 
     // Init SteamApps
     SteamApps := SteamAPI_ISteamClient_GetISteamApps(
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMAPPS_INTERFACE_VERSION);
-    if SteamApps = Nil then
-      WriteLnLog('SteamApps Failed');
+    SteamVerifyLoad(SteamApps, 'SteamApps');
 
     // Init SteamFriends
     SteamFriends := SteamAPI_ISteamClient_GetISteamFriends(
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMFRIENDS_INTERFACE_VERSION);
+    SteamVerifyLoad(SteamFriends, 'SteamFriends');
 
     // Init SteamUtils
     SteamUtils := SteamAPI_ISteamClient_GetISteamUtils(
        SteamClient, SteamPipeHandle, STEAMUTILS_INTERFACE_VERSION);
+    SteamVerifyLoad(SteamUtils, 'SteamUtils');
 
     // Init SteamInput
     SteamInput := SteamAPI_ISteamClient_GetISteamInput(
        SteamClient, SteamUserHandle, SteamPipeHandle, STEAMINPUT_INTERFACE_VERSION);
+    SteamVerifyLoad(SteamInput, 'SteamInput');
 
 
     // Init SteamUserStats and request UserStats (will wait for callback, handled in Update)
     SteamUserStats := SteamAPI_ISteamClient_GetISteamUserStats(
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSERSTATS_INTERFACE_VERSION);
+    SteamVerifyLoad(SteamUserStats, 'SteamUserStats');
 
     FUserId := SteamAPI_ISteamUser_GetSteamID(SteamUser);
     {$if STEAM_API_VERSION < 1.61}
@@ -490,7 +497,10 @@ destructor TCastleSteam.Destroy;
 begin
   FreeAndNil(FAchievements);
   if Enabled then
-    SteamAPI_Shutdown();
+    begin
+      SteamAPI_ISteamClient_BReleaseSteamPipe(SteamClient, SteamPipeHandle);
+      SteamAPI_Shutdown();
+    end;
   if ApplicationProperties(false) <> nil then
     ApplicationProperties(false).OnUpdate.Remove({$ifdef FPC}@{$endif} Update);
   inherited;
@@ -612,6 +622,16 @@ end;
 procedure TCastleSteam.SteamError(const ErrorMsg: String);
 begin
   WriteLnWarning(ErrorMsg);
+end;
+
+function TCastleSteam.SteamVerifyLoad(P: Pointer; const S: String): Boolean;
+begin
+  Result := True;
+  if P = Nil then
+    begin
+      SteamError(Format('Failed to load %s', [S]));
+      Result := False;
+    end;
 end;
 
 const

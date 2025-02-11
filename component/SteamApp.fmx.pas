@@ -112,18 +112,22 @@ end;
 constructor TSteamApp.Create(const AAppId: TAppId);
 begin
   inherited Create(AAppId);
+  if Enabled then
+    begin
+      ApplicationProperties();
 
-  ApplicationProperties();
-
-  FUpdateCount := 0;
-  FAppTimer := TTimer.Create(Nil);
-  FAppTimer.OnTimer := Nil;
-  FAppTimer.Interval := 0;
-  FAppTimer.Enabled := False;
+      FUpdateCount := 0;
+      FAppTimer := TTimer.Create(Nil);
+      FAppTimer.OnTimer := Nil;
+      FAppTimer.Interval := 0;
+      FAppTimer.Enabled := False;
+    end;
 end;
 
 destructor TSteamApp.Destroy;
 begin
+  OnUserStatsReceived := Nil;
+  FDoUpdate := Nil;
   FAppTimer.Enabled := False;
   FreeAndNil(FAppTimer);
   inherited;

@@ -229,10 +229,78 @@ type
   ISteamApps = record Ptr: Pointer; end;
   ISteamFriends = record Ptr: Pointer; end;
   ISteamUser = record Ptr: Pointer; end;
-  ISteamInput = record Ptr: Pointer; end;
 
+type
+  ISteamInput = record Ptr: Pointer; end;
+  // Input Types
+  TSteamInputActionSetHandle = UInt64;
+  PSteamInputActionSetHandle = ^TSteamInputActionSetHandle;
+  { These handles are used to refer to a specific in-game action or action set
+    All action handles should be queried during initialization for performance reasons }
+  TSteamInputAnalogActionHandle  =	UInt64;
+  PSteamInputAnalogActionHandle = ^TSteamInputAnalogActionHandle;
+  { A handle to an analog action. This can be obtained from ISteamInput::GetAnalogActionHandle. }
+  TSteamInputDigitalActionHandle =	UInt64;
+  PSteamInputDigitalActionHandle = ^TSteamInputDigitalActionHandle;
+  { A handle to a digital action. This can be obtained from ISteamInput::GetDigitalActionHandle. }
+  TSteamInputHandle = UInt64;
+  PSteamInputHandle = ^TSteamInputHandle;
+  {	This handle will consistently identify a controller, even if it is disconnected and re-connected }
+  TSteamInputActionEventCallbackPointer = UInt64; // WRONG ???
+  PSteamInputActionEventCallbackPointer = ^TSteamInputActionEventCallbackPointer;
   // Pointer to ISteamUtils interface from Steam API.
   ISteamUtils = record Ptr: Pointer; end;
+
+  // Enums
+  EControllerHapticLocation = (
+    k_EControllerHapticLocation_Left = 1,
+    k_EControllerHapticLocation_Right = 2,
+    k_EControllerHapticLocation_Both = 3
+  );
+  EControllerHapticType = (
+    k_EControllerHapticType_Off = 0,
+    k_EControllerHapticType_Tick = 1,
+    k_EControllerHapticType_Click = 2
+  );
+  ESteamControllerPad = (
+    k_ESteamControllerPad_Left = 0,
+    k_ESteamControllerPad_Right = 1
+  );
+
+const
+  STEAM_INPUT_MIN_ANALOG_ACTION_DATA = -1.0;
+  STEAM_INPUT_MAX_ANALOG_ACTION_DATA = 1.0;
+
+{$I isteamdualsense.inc }
+
+type
+    PSteamInputAnalogActionData = ^TSteamInputAnalogActionData;
+    TSteamInputAnalogActionData = record
+        eMode : EInputSourceMode;
+        x : Single;
+        y : Single;
+        bActive : LongBool;
+      end;
+
+    PSteamInputDigitalActionData = ^TSteamInputDigitalActionData;
+    TSteamInputDigitalActionData = record
+        bState : longbool;
+        bActive : longbool;
+      end;
+
+    PSteamInputMotionData = ^TSteamInputMotionData;
+    TSteamInputMotionData = record
+        rotQuatX : single;
+        rotQuatY : single;
+        rotQuatZ : single;
+        rotQuatW : single;
+        posAccelX : single;
+        posAccelY : single;
+        posAccelZ : single;
+        rotVelX : single;
+        rotVelY : single;
+        rotVelZ : single;
+      end;
 
 var
   // steam_api.h translation (full documentation at https://partner.steamgames.com/doc/api/steam_api )
@@ -262,6 +330,8 @@ var
   // which is actually "flat" (C, no classes) Steam API corresponding to the C++ API
 
   // ISteamClient
+  SteamAPI_ISteamClient_BReleaseSteamPipe: function (SteamClient: Pointer; hSteamPipe: HSteamPipe): LongBool; CDecl;
+  SteamAPI_ISteamClient_ReleaseUser: procedure (SteamClient: Pointer; hSteamPipe: HSteamPipe; hSteamUser: HSteamUser); CDecl;
   SteamAPI_ISteamClient_SetWarningMessageHook: procedure (SteamClient: Pointer; WarningMessageHook: SteamAPIWarningMessageHook); CDecl;
   // SteamUtils has no SteamUser
   SteamAPI_ISteamClient_GetISteamUtils: function (SteamClient: Pointer; SteamPipeHandle: HSteamPipe; const SteamUtilsInterfaceVersion: PAnsiChar): Pointer; CDecl;
@@ -305,7 +375,56 @@ var
 
   // ISteamInput
   // A versioned accessor is exported by the library
-  SteamAPI_SteamInput: function (): ISteamInput; CDecl;
+  SteamAPI_SteamInput:                                      function (): ISteamInput; CDecl;
+  SteamAPI_ISteamInput_Init:                                function (SteamInput: Pointer; bExplicitlyCallRunFrame: LongBool): LongBool; CDecl;
+  SteamAPI_ISteamInput_Shutdown:                            function (SteamInput: Pointer): LongBool; CDecl;
+
+  SteamAPI_ISteamInput_ActivateActionSet:                   procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle;  actionSetHandle: TSteamInputActionSetHandle );
+  SteamAPI_ISteamInput_ActivateActionSetLayer:              procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; actionSetLayerHandle: TSteamInputActionSetHandle );
+  SteamAPI_ISteamInput_BNewDataAvailable:                   function (SteamInput: Pointer): LongBool; CDecl;
+  SteamAPI_ISteamInput_BWaitForData:                        function (SteamInput: Pointer;  bWaitForever: LongBool; unTimeout: UInt32 ): LongBool; CDecl;
+  SteamAPI_ISteamInput_DeactivateActionSetLayer:            procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; actionSetLayerHandle: TSteamInputActionSetHandle );
+  SteamAPI_ISteamInput_DeactivateAllActionSetLayers:        procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle );
+  SteamAPI_ISteamInput_EnableActionEventCallbacks:          procedure (SteamInput: Pointer; pCallback : PSteamInputActionEventCallbackPointer );
+  SteamAPI_ISteamInput_EnableDeviceCallbacks:               procedure (SteamInput: Pointer);
+  SteamAPI_ISteamInput_GetActionOriginFromXboxOrigin:       function (SteamInput: Pointer; inputHandle: TSteamInputHandle;  eOrigin: EXboxOrigin ): EInputActionOrigin; CDecl;
+  SteamAPI_ISteamInput_GetActionSetHandle:                  function (SteamInput: Pointer; pszActionSetName: PAnsiChar): TSteamInputActionSetHandle; CDecl;
+  SteamAPI_ISteamInput_GetActiveActionSetLayers:            function (SteamInput: Pointer; inputHandle: TSteamInputHandle; handlesOut: PSteamInputActionSetHandle ): CInt; CDecl;
+  SteamAPI_ISteamInput_GetAnalogActionData:                 function (SteamInput: Pointer; inputHandle: TSteamInputHandle;  analogActionHandle: TSteamInputAnalogActionHandle ): TSteamInputAnalogActionData; CDecl;
+  SteamAPI_ISteamInput_GetAnalogActionHandle:               function (SteamInput: Pointer; pszActionName: PAnsiChar ): TSteamInputAnalogActionHandle; CDecl;
+  SteamAPI_ISteamInput_GetAnalogActionOrigins:              function (SteamInput: Pointer; inputHandle: TSteamInputHandle; actionSetHandle: TSteamInputActionSetHandle; analogActionHandle: TSteamInputAnalogActionHandle; originsOut: PEInputActionOrigin ): CInt; CDecl;
+  SteamAPI_ISteamInput_GetConnectedControllers:             function (SteamInput: Pointer; handlesOut: PSteamInputHandle): CInt; CDecl;
+  SteamAPI_ISteamInput_GetControllerForGamepadIndex:        function (SteamInput: Pointer; nIndex: CInt ): TSteamInputHandle; CDecl;
+  SteamAPI_ISteamInput_GetCurrentActionSet:                 function (SteamInput: Pointer; inputHandle: TSteamInputHandle ): TSteamInputActionSetHandle; CDecl;
+  SteamAPI_ISteamInput_GetDeviceBindingRevision:            function (SteamInput: Pointer; inputHandle: TSteamInputHandle;  pMajor: PCInt; pMinor: PCInt ): LongBool; CDecl;
+  SteamAPI_ISteamInput_GetDigitalActionData:                function (SteamInput: Pointer; inputHandle: TSteamInputHandle;  digitalActionHandle: TSteamInputDigitalActionHandle ): TSteamInputDigitalActionData; CDecl;
+  SteamAPI_ISteamInput_GetDigitalActionHandle:              function (SteamInput: Pointer; pszActionName: PAnsiChar ): TSteamInputDigitalActionHandle; CDecl;
+  SteamAPI_ISteamInput_GetDigitalActionOrigins:             function (SteamInput: Pointer; inputHandle: TSteamInputHandle; actionSetHandle: TSteamInputActionSetHandle; digitalActionHandle: TSteamInputDigitalActionHandle; originsOut: PEInputActionOrigin): CInt; CDecl;
+  SteamAPI_ISteamInput_GetGamepadIndexForController:        function (SteamInput: Pointer; ulinputHandle: TSteamInputHandle ): CInt; CDecl;
+  SteamAPI_ISteamInput_GetGlyphForActionOrigin_Legacy:      function (SteamInput: Pointer; eOrigin: EInputActionOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetGlyphForXboxOrigin:               function (SteamInput: Pointer; eOrigin: EXboxOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetGlyphPNGForActionOrigin:          function (SteamInput: Pointer; eOrigin: EInputActionOrigin; eSize: ESteamInputGlyphSize; unFlags: UInt32 ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetGlyphSVGForActionOrigin:          function (SteamInput: Pointer; eOrigin: EInputActionOrigin; unFlags: UInt32 ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetInputTypeForHandle:               function (SteamInput: Pointer; inputHandle: TSteamInputHandle ): ESteamInputType; CDecl;
+  SteamAPI_ISteamInput_GetMotionData:                       function (SteamInput: Pointer; inputHandle: TSteamInputHandle ): TSteamInputMotionData; CDecl;
+  SteamAPI_ISteamInput_GetRemotePlaySessionID:              function (SteamInput: Pointer; inputHandle: TSteamInputHandle ): UInt32; CDecl;
+  SteamAPI_ISteamInput_GetSessionInputConfigurationSettings:function (SteamInput: Pointer): UInt16; CDecl;
+  SteamAPI_ISteamInput_GetStringForActionOrigin:            function (SteamInput: Pointer; eOrigin: EInputActionOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetStringForAnalogActionName:        function (SteamInput: Pointer; eActionHandle: TSteamInputAnalogActionHandle ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetStringForDigitalActionName:       function (SteamInput: Pointer; eActionHandle: TSteamInputDigitalActionHandle ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetStringForXboxOrigin:              function (SteamInput: Pointer; eOrigin: EXboxOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_Legacy_TriggerHapticPulse:           procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; eTargetPad: ESteamControllerPad; usDurationMicroSec: UInt16 );
+  SteamAPI_ISteamInput_Legacy_TriggerRepeatedHapticPulse:   procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; eTargetPad: ESteamControllerPad; usDurationMicroSec: UInt16; usOffMicroSec: UInt16; unRepeat: UInt16; nFlags: CInt );
+  SteamAPI_ISteamInput_RunFrame:                            procedure (SteamInput: Pointer; bReservedValue: LongBool);
+  SteamAPI_ISteamInput_SetDualSenseTriggerEffect:           procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; const pParam: PScePadTriggerEffectParam );
+  SteamAPI_ISteamInput_SetInputActionManifestFilePath:      function (SteamInput: Pointer; pchInputActionManifestAbsolutePath: PAnsiChar ): LongBool; CDecl;
+  SteamAPI_ISteamInput_SetLEDColor:                         procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; nColorR: UInt8; nColorG: UInt8; nColorB: UInt8; nFlags: UInt32 );
+  SteamAPI_ISteamInput_ShowBindingPanel:                    function (SteamInput: Pointer; inputHandle: TSteamInputHandle ): LongBool; CDecl;
+  SteamAPI_ISteamInput_StopAnalogActionMomentum:            procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; eAction: TSteamInputAnalogActionHandle );
+  SteamAPI_ISteamInput_TranslateActionOrigin:               function (SteamInput: Pointer; eDestinationInputType: ESteamInputType; eSourceOrigin: EInputActionOrigin ): EInputActionOrigin; CDecl;
+  SteamAPI_ISteamInput_TriggerSimpleHapticEvent:            procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; eHapticLocation: EControllerHapticLocation; nIntensity: UInt8; nGainDB: Char; nOtherIntensity: UInt8; nOtherGainDB: Char );
+  SteamAPI_ISteamInput_TriggerVibration:                    procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; usLeftSpeed: UInt16; usRightSpeed: UInt16 );
+  SteamAPI_ISteamInput_TriggerVibrationExtended:            procedure (SteamInput: Pointer; inputHandle: TSteamInputHandle; usLeftSpeed: UInt16; usRightSpeed: UInt16; usLeftTriggerSpeed: UInt16; usRightTriggerSpeed: UInt16 );
 
 
   // ISteamUtils
@@ -412,6 +531,8 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_GetHSteamPipe) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_RegisterCallback) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_UnregisterCallback) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_BReleaseSteamPipe) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_ReleaseUser) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_SetWarningMessageHook) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamApps) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := nil;
@@ -463,6 +584,57 @@ begin
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetMediumFriendAvatar) := nil;
   Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetSmallFriendAvatar) := nil;
 
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamInput) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Init) := nil;
+  Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Shutdown) := nil;
+
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_ActivateActionSet) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_ActivateActionSetLayer) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_BNewDataAvailable) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_BWaitForData) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_DeactivateActionSetLayer) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_DeactivateAllActionSetLayers) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_EnableActionEventCallbacks) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_EnableDeviceCallbacks) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetActionOriginFromXboxOrigin) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetActionSetHandle) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetActiveActionSetLayers) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetAnalogActionData) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetAnalogActionHandle) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetAnalogActionOrigins) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetConnectedControllers) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetControllerForGamepadIndex) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetCurrentActionSet) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDeviceBindingRevision) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDigitalActionData) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDigitalActionHandle) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDigitalActionOrigins) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGamepadIndexForController) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphForActionOrigin_Legacy) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphForXboxOrigin) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphPNGForActionOrigin) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphSVGForActionOrigin) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetInputTypeForHandle) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetMotionData) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetRemotePlaySessionID) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetSessionInputConfigurationSettings) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForActionOrigin) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForAnalogActionName) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForDigitalActionName) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForXboxOrigin) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Legacy_TriggerHapticPulse) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Legacy_TriggerRepeatedHapticPulse) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_RunFrame) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_SetDualSenseTriggerEffect) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_SetInputActionManifestFilePath) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_SetLEDColor) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_ShowBindingPanel) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_StopAnalogActionMomentum) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TranslateActionOrigin) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TriggerSimpleHapticEvent) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TriggerVibration) := nil;
+	Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TriggerVibrationExtended) := nil;
+
   FreeAndNil(SteamLibrary);
 end;
 
@@ -496,6 +668,8 @@ begin
 
     Pointer({$ifndef FPC}@{$endif} SteamInternal_CreateInterface) := SteamLibrary.Symbol('SteamInternal_CreateInterface');
 
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_BReleaseSteamPipe) := SteamLibrary.Symbol('SteamAPI_ISteamClient_BReleaseSteamPipe');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_ReleaseUser) := SteamLibrary.Symbol('SteamAPI_ISteamClient_ReleaseUser');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamApps) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamApps');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamFriends) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamFriends');
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamClient_GetISteamInput) := SteamLibrary.Symbol('SteamAPI_ISteamClient_GetISteamInput');
@@ -549,6 +723,57 @@ begin
     Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamFriends_GetSmallFriendAvatar) := SteamLibrary.Symbol('SteamAPI_ISteamFriends_GetSmallFriendAvatar');
     // alias to versioned entry point
     Pointer({$ifndef FPC}@{$endif} SteamAPI_SteamInput) := SteamLibrary.Symbol('SteamAPI_SteamInput_v' + VersionSteamInput);
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Init) := SteamLibrary.Symbol('SteamAPI_ISteamInput_Init');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Shutdown) := SteamLibrary.Symbol('SteamAPI_ISteamInput_Shutdown');
+
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_ActivateActionSet)                    := SteamLibrary.Symbol('SteamAPI_ISteamInput_ActivateActionSet');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_ActivateActionSetLayer)               := SteamLibrary.Symbol('SteamAPI_ISteamInput_ActivateActionSetLayer');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_BNewDataAvailable)                    := SteamLibrary.Symbol('SteamAPI_ISteamInput_BNewDataAvailable');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_BWaitForData)                         := SteamLibrary.Symbol('SteamAPI_ISteamInput_BWaitForData');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_DeactivateActionSetLayer)             := SteamLibrary.Symbol('SteamAPI_ISteamInput_DeactivateActionSetLayer');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_DeactivateAllActionSetLayers)         := SteamLibrary.Symbol('SteamAPI_ISteamInput_DeactivateAllActionSetLayers');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_EnableActionEventCallbacks)           := SteamLibrary.Symbol('SteamAPI_ISteamInput_EnableActionEventCallbacks');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_EnableDeviceCallbacks)                := SteamLibrary.Symbol('SteamAPI_ISteamInput_EnableDeviceCallbacks');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetActionOriginFromXboxOrigin)        := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetActionOriginFromXboxOrigin');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetActionSetHandle)                   := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetActionSetHandle');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetActiveActionSetLayers)             := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetActiveActionSetLayers');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetAnalogActionData)                  := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetAnalogActionData');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetAnalogActionHandle)                := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetAnalogActionHandle');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetAnalogActionOrigins)               := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetAnalogActionOrigins');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetConnectedControllers)              := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetConnectedControllers');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetControllerForGamepadIndex)         := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetControllerForGamepadIndex');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetCurrentActionSet)                  := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetCurrentActionSet');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDeviceBindingRevision)             := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetDeviceBindingRevision');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDigitalActionData)                 := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetDigitalActionData');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDigitalActionHandle)               := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetDigitalActionHandle');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetDigitalActionOrigins)              := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetDigitalActionOrigins');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGamepadIndexForController)         := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetGamepadIndexForController');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphForActionOrigin_Legacy)       := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetGlyphForActionOrigin_Legacy');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphForXboxOrigin)                := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetGlyphForXboxOrigin');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphPNGForActionOrigin)           := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetGlyphPNGForActionOrigin');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetGlyphSVGForActionOrigin)           := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetGlyphSVGForActionOrigin');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetInputTypeForHandle)                := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetInputTypeForHandle');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetMotionData)                        := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetMotionData');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetRemotePlaySessionID)               := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetRemotePlaySessionID');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetSessionInputConfigurationSettings) := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetSessionInputConfigurationSettings');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForActionOrigin)             := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetStringForActionOrigin');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForAnalogActionName)         := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetStringForAnalogActionName');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForDigitalActionName)        := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetStringForDigitalActionName');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_GetStringForXboxOrigin)               := SteamLibrary.Symbol('SteamAPI_ISteamInput_GetStringForXboxOrigin');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Legacy_TriggerHapticPulse)            := SteamLibrary.Symbol('SteamAPI_ISteamInput_Legacy_TriggerHapticPulse');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_Legacy_TriggerRepeatedHapticPulse)    := SteamLibrary.Symbol('SteamAPI_ISteamInput_Legacy_TriggerRepeatedHapticPulse');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_RunFrame)                             := SteamLibrary.Symbol('SteamAPI_ISteamInput_RunFrame');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_SetDualSenseTriggerEffect)            := SteamLibrary.Symbol('SteamAPI_ISteamInput_SetDualSenseTriggerEffect');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_SetInputActionManifestFilePath)       := SteamLibrary.Symbol('SteamAPI_ISteamInput_SetInputActionManifestFilePath');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_SetLEDColor)                          := SteamLibrary.Symbol('SteamAPI_ISteamInput_SetLEDColor');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_ShowBindingPanel)                     := SteamLibrary.Symbol('SteamAPI_ISteamInput_ShowBindingPanel');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_StopAnalogActionMomentum)             := SteamLibrary.Symbol('SteamAPI_ISteamInput_StopAnalogActionMomentum');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TranslateActionOrigin)                := SteamLibrary.Symbol('SteamAPI_ISteamInput_TranslateActionOrigin');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TriggerSimpleHapticEvent)             := SteamLibrary.Symbol('SteamAPI_ISteamInput_TriggerSimpleHapticEvent');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TriggerVibration)                     := SteamLibrary.Symbol('SteamAPI_ISteamInput_TriggerVibration');
+    Pointer({$ifndef FPC}@{$endif} SteamAPI_ISteamInput_TriggerVibrationExtended)             := SteamLibrary.Symbol('SteamAPI_ISteamInput_TriggerVibrationExtended');
+
+
   end;
 end;
 
