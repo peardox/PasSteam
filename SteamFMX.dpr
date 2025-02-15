@@ -3,7 +3,10 @@ program SteamFMX;
 uses
   System.StartUpCopy,
   FMX.Forms,
-  {$ifdef MSWINDOWS}shellapi, FMX.Platform.Win,{$endif}
+  {$ifdef MSWINDOWS}
+  shellapi,
+  FMX.Platform.Win,
+  {$endif }
   FMXMain in 'src\FMXMain.pas' {Form1},
   castlesteam in 'steam\castlesteam.pas',
   castleinternalsteamapi in 'steam\castleinternalsteamapi.pas',
@@ -15,7 +18,12 @@ uses
   castlelog in 'steam\override\castlelog.pas',
   castlestringutils in 'steam\override\castlestringutils.pas',
   castleutils in 'steam\override\castleutils.pas',
-  steamtypes in 'steam\steamtypes.pas';
+  steamtypes in 'steam\steamtypes.pas',
+  steamutils in 'steam\subsystems\steamutils.pas',
+  steamfriends in 'steam\subsystems\steamfriends.pas',
+  steaminput in 'steam\subsystems\steaminput.pas',
+  SteamSubsystem in 'steam\subsystems\SteamSubsystem.pas',
+  steamapps in 'steam\subsystems\steamapps.pas';
 
 {$R *.res}
 
@@ -28,11 +36,13 @@ begin
   var MainForm := Form1;
   Application.Run;
 {$ifdef MSWINDOWS}
+{
   if SystemRestart then
     begin
       ShellExecute(FMX.Platform.Win.FormToHWND(MainForm), nil, PWideChar(ParamStr(0)), nil, nil, 1);
 //      Application.Terminate; // or, if this is the main form, simply Close;
     end;
+}
 {$endif}
 
 end.

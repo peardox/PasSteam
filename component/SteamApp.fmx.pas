@@ -4,7 +4,7 @@ interface
 
 uses
   System.Classes, CastleSteam, CastleApplicationProperties, fmx.Types,
-  fmx.Graphics;
+  fmx.Graphics, SteamTypes;
 
 type
   TSteamApp = Class(TCastleSteam)
@@ -43,7 +43,9 @@ var
   Row: Integer;
 begin
   Result := nil;
-  SteamBitmap := GetSteamBitmap(AHandle);
+  if not Enabled then
+    Exit;
+  SteamBitmap := Utils.GetSteamBitmap(AHandle);
   try
     if Assigned(SteamBitmap) and SteamBitmap.IsValid then
       begin
@@ -80,7 +82,9 @@ var
   SR, DR: Pointer;
   Row: Integer;
 begin
-  SteamBitmap := GetSteamBitmap(AHandle);
+  if not Enabled then
+    Exit;
+  SteamBitmap := Utils.GetSteamBitmap(AHandle);
   try
     if Assigned(SteamBitmap) and SteamBitmap.IsValid then
       begin
@@ -137,7 +141,7 @@ function TSteamApp.GetAvatar: UInt32;
 begin
   Result := 0;
   if UserStatsReceived then
-     Result := GetFriendImageHandle(UserId);
+     Result := Friends.GetFriendImageHandle(UserId);
 end;
 
 procedure TSteamApp.SetInterval(const AValue: Cardinal);

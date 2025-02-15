@@ -310,6 +310,9 @@
             <Form>Form1</Form>
             <FormType>fmx</FormType>
         </DCCReference>
+        <DCCReference Include="..\steam\steamtypes.pas"/>
+        <DCCReference Include="..\steam\SteamSubsystem.pas"/>
+        <DCCReference Include="..\steam\override\castlelog.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

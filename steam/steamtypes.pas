@@ -1,6 +1,8 @@
-unit steamtypes;
+unit SteamTypes;
 
 interface
+
+uses SysUtils;
 
 { STEAM_API_VERSION allows switching between an established tested API
   and a newer API that is being tested. It makes upgrading between two
@@ -15,8 +17,41 @@ interface
   and STEAMLIBVER should be an empty string ('')
 }
 
+type
+  HSteamPipe = Int32;
+  HSteamUser = Int32;
+  { It's a struct in C headers but can be passed as UInt64,
+    defined in C headers with explicit statement that it's 64-bit sized. }
+  CSteamId = UInt64;
+  { It's a struct in C headers but can be passed as UInt64,
+    defined in C headers with explicit ability to be typecasted as 64-bit int. }
+  CGameID = UInt64;
+  CUserID = UInt64;
+  EResult = UInt32;
+  TAppId = UInt32;
+  PSteamErrMsg = PChar;
+
+  { Internal structure used in manual callback dispatch
+    (CallbackMsg_t in C headers). }
+  TCallbackMsg = record
+    // Specific user to whom this callback applies.
+    m_hSteamUser: HSteamUser;
+    // Callback identifier.  (Corresponds to the k_iCallback enum in the callback structure.)
+    m_iCallback: UInt32;
+    // Points to the callback structure
+    // (C headers literal translation would be Puint8, but it's pointless,
+    // this is not pointer to UInt8, this is a pointer to callback-specific blob).
+    m_pubParam: Pointer;
+    // Size of the data pointed to by m_pubParam
+    m_cubParam: UInt32;
+  end;
+  PCallbackMsg = ^TCallbackMsg;
+
+  TIconSize = (IconSmall, IconMedium, IconLarge);
+
 const
   STEAM_API_VERSION = 1.61;
+  STEAM_INPUT_MAX_COUNT = 16;
 
   { Versions of Steam API interfaces.
     Correspond to Steamworks 1.xx controlled by API_XXX with fallback to 1.57 version. }
@@ -39,6 +74,7 @@ const
   STEAMUSER_INTERFACE_VERSION = 'SteamUser023'; //< isteamuser.h
   STEAMUSERSTATS_INTERFACE_VERSION = 'STEAMUSERSTATS_INTERFACE_VERSION012'; //< isteamuserstats.h
   STEAMFRIENDS_INTERFACE_VERSION = 'SteamFriends017'; //< isteamuserstats.h
+  STEAMAPPS_INTERFACE_VERSION = 'STEAMAPPS_INTERFACE_VERSION008'; //< isteaminput.h
   STEAMUTILS_INTERFACE_VERSION = 'SteamUtils010'; //< isteamuser.h
   STEAMINPUT_INTERFACE_VERSION = 'SteamInput006'; //< isteaminput.h
   VersionSteamUtils = '010'; //< matches STEAMUTILS_INTERFACE_VERSION *and* accessor in steam_api_flat.h
@@ -49,6 +85,148 @@ const
   STEAMLIBVER = '';
 {$endif}
 
+type
+  ISteamInput = record Ptr: Pointer; end;
+  // Input Types
+  TSteamInputActionSetHandle = UInt64;
+  PSteamInputActionSetHandle = ^TSteamInputActionSetHandle;
+  { These handles are used to refer to a specific in-game action or action set
+    All action handles should be queried during initialization for performance reasons }
+  TSteamInputAnalogActionHandle  =	UInt64;
+  PSteamInputAnalogActionHandle = ^TSteamInputAnalogActionHandle;
+  { A handle to an analog action. This can be obtained from ISteamInput::GetAnalogActionHandle. }
+  TSteamInputDigitalActionHandle =	UInt64;
+  PSteamInputDigitalActionHandle = ^TSteamInputDigitalActionHandle;
+  { A handle to a digital action. This can be obtained from ISteamInput::GetDigitalActionHandle. }
+  TInputHandle = UInt64;
+  PSteamInputHandle = ^TInputHandle;
+  {	This handle will consistently identify a controller, even if it is disconnected and re-connected }
+  TSteamInputActionEventCallbackPointer = UInt64; // WRONG ???
+  PSteamInputActionEventCallbackPointer = ^TSteamInputActionEventCallbackPointer;
+
+  ESteamInputType = (
+    k_ESteamInputType_Unknown,
+    k_ESteamInputType_SteamController,
+    k_ESteamInputType_XBox360Controller,
+    k_ESteamInputType_XBoxOneController,
+    k_ESteamInputType_GenericGamepad,		// DirectInput controllers
+    k_ESteamInputType_PS4Controller,
+    k_ESteamInputType_AppleMFiController,	// Unused
+    k_ESteamInputType_AndroidController,	// Unused
+    k_ESteamInputType_SwitchJoyConPair,		// Unused
+    k_ESteamInputType_SwitchJoyConSingle,	// Unused
+    k_ESteamInputType_SwitchProController,
+    k_ESteamInputType_MobileTouch,			// Steam Link App On-screen Virtual Controller
+    k_ESteamInputType_PS3Controller,		// Currently uses PS4 Origins
+    k_ESteamInputType_PS5Controller,		// Added in SDK 151
+    k_ESteamInputType_SteamDeckController,	// Added in SDK 153
+    k_ESteamInputType_Count,
+    k_ESteamInputType_MaximumPossibleValue = 255
+  );
+
+  // SteamInput Callbacks
+  TSteamInputDeviceConnected = record
+  const
+    k_iCallback = 2801;
+  var
+    m_ulConnectedDeviceHandle: TInputHandle;
+  end;
+  PSteamInputDeviceConnected = ^TSteamInputDeviceConnected;
+
+  TSteamInputDeviceDisconnected = record
+  const
+    k_iCallback = 2802;
+  var
+    m_ulDisconnectedDeviceHandle: TInputHandle;
+  end;
+  PSteamInputDeviceDisconnected = ^TSteamInputDeviceDisconnected;
+
+  TSteamInputConfigurationLoaded = record
+  const
+    k_iCallback = 2803;
+  var
+    m_unAppID: TAppId;
+    m_ulDeviceHandle: TInputHandle;
+    m_ulMappingCreator: CSteamID;
+    m_unMajorRevision: UInt32;
+    m_unMinorRevision: UInt32;
+    m_bUsesSteamInputAPI: LongBool;
+    m_bUsesGamepadAPI: LongBool;
+  end;
+  PSteamInputConfigurationLoaded = ^TSteamInputConfigurationLoaded;
+
+  TSteamInputGamepadSlotChange = record
+  const
+    k_iCallback = 2804;
+  var
+    m_unAppID: TAppId;
+    m_ulDeviceHandle: TInputHandle;
+    m_eDeviceType: ESteamInputType;
+    m_nOldGamepadSlot: Int32;
+    m_nNewGamepadSlot: Int32;
+  end;
+  PSteamInputGamepadSlotChange = ^TSteamInputGamepadSlotChange;
+
+  { TSteamBitmap is a non-standard and hungry 24 bit RGBA data format used by Steam
+
+    It is necessary to convert this format to something your Application can use.
+
+    Ideally these bitmaps need caching (TBD)
+  }
+
+  TSteamBitmap = class
+  strict private
+    FIsValid: Boolean;
+    FWidth: Integer;
+    FHeight: Integer;
+    FBPP: Integer;
+    FImage: Pointer;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure SetImageFormat(const ImWidth, ImHeight, BytesPerPixel: Integer);
+    function GetImageMemorySize(): UInt64;
+    procedure SetSteamImage(const AImage: Pointer);
+    property IsValid: Boolean read FIsValid write FIsValid;
+    property Width: Integer read FWidth;
+    property Height: Integer read FHeight;
+    property BPP: Integer read FBPP;
+    property Image: Pointer read FImage;
+  end;
+
+
 implementation
+
+{ TSteamBitmap }
+
+constructor TSteamBitmap.Create;
+begin
+
+end;
+
+destructor TSteamBitmap.Destroy;
+begin
+  if Assigned(FImage) then
+    FreeMem(Fimage);
+  inherited;
+end;
+
+function TSteamBitmap.GetImageMemorySize: UInt64;
+begin
+  Result := FWidth * FHeight * FBPP;
+end;
+
+procedure TSteamBitmap.SetSteamImage(const AImage: Pointer);
+begin
+  FImage := AImage;
+end;
+
+procedure TSteamBitmap.SetImageFormat(const ImWidth, ImHeight, BytesPerPixel: Integer);
+begin
+  FWidth := ImWidth;
+  FHeight := ImHeight;
+  FBPP := BytesPerPixel;
+end;
+
 
 end.

@@ -320,6 +320,11 @@
         <DCCReference Include="steam\override\castlestringutils.pas"/>
         <DCCReference Include="steam\override\castleutils.pas"/>
         <DCCReference Include="steam\steamtypes.pas"/>
+        <DCCReference Include="steam\subsystems\steamutils.pas"/>
+        <DCCReference Include="steam\subsystems\steamfriends.pas"/>
+        <DCCReference Include="steam\subsystems\steaminput.pas"/>
+        <DCCReference Include="steam\subsystems\SteamSubsystem.pas"/>
+        <DCCReference Include="steam\subsystems\steamapps.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

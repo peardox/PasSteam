@@ -107,7 +107,7 @@ type
 
   TInterface = class
     accessors: TAccessors;
-    classname: String;
+    cmethod: String;
     fields: TInterfaceFieldArray;
     methods: TMethods;
     enums: TInterfaceEnums;
@@ -344,6 +344,7 @@ begin
   TypeToPas.Add('EResult',        'UInt32');
   TypeToPas.Add('TAppId',         'UInt32');
   TypeToPas.Add('PSteamErrMsg',   'PChar');
+  TypeToPas.Add('SteamAPICall_t', 'UInt64');
 
   TypeToPas.Add('TArraySingle50', 'Array[0..49] of Single');
   TypeToPas.Add('TArrayWord8',    'Array[0..7] of Word');
@@ -407,6 +408,11 @@ begin
   CTypeToPas.Add('char [64]',   'TAnsiChar64');
   CTypeToPas.Add('char [32]',   'TAnsiChar32');
   CTypeToPas.Add('char [4]',    'TAnsiChar4');
+end;
+
+function DecodeParams(const Params: TParams): String;
+begin
+  Result := '';
 end;
 
 procedure TApiWriterForm.ShowCode;
@@ -474,7 +480,10 @@ begin
         begin
           Memo1.Lines.Add(Format('  // %s',[InterfaceList[I].classname]));
           for M := 0 to InterfaceList[I].methods.Count - 1 do
-            Memo1.Lines.Add(Format('  %s: function(Self: Pointer); %s; CDecl;', [InterfaceList[I].methods[M].methodname_flat, InterfaceList[I].methods[M].returntype]));
+            if InterfaceList[I].methods[M].returntype = 'void' then
+              Memo1.Lines.Add(Format('  %s: procedure(%s: Pointer%s); CDecl;', [InterfaceList[I].methods[M].methodname_flat, InterfaceList[I].cmethod, DecodeParams(InterfaceList[I].methods[M].params)]))
+            else
+              Memo1.Lines.Add(Format('  %s: function(%s: Pointer%s); %s; CDecl;', [InterfaceList[I].methods[M].methodname_flat, InterfaceList[I].cmethod, DecodeParams(InterfaceList[I].methods[M].params), ConvertType(InterfaceList[I].methods[M].returntype)]));
           Memo1.Lines.Add('');
         end;
       Memo1.Lines.Add('');
@@ -947,7 +956,7 @@ begin
             else if AKey = 'classname' then
               begin
                 if Pair.JsonValue is TJSONString then
-                  O.classname := Pair.JsonValue.AsType<String>
+                  O.cmethod := Pair.JsonValue.AsType<String>
                 else
                   Raise Exception.Create('InterfaceList - classname is non-string');
               end

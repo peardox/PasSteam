@@ -24,44 +24,22 @@ interface
 
 {$define CASTLE_DEBUG_STEAM_API_TESTING}
 
-uses Classes, CTypes, SysUtils, SteamTypes,
+uses Classes, CTypes, SysUtils,
   {$ifndef fpc}System.Generics.Collections,{$else}Contnrs,Generics.Collections,{$endif}
+  SteamTypes,
+  SteamSubSystem,
+  SteamApps,
+  SteamInput,
+  SteamFriends,
+  SteamUtils,
   CastleInternalSteamApi;
 
 type
-  TAppId = CastleInternalSteamApi.TAppId;
-  TIconSize = (IconSmall, IconMedium, IconLarge);
+  TAppId = SteamTypes.TAppId;
   TAchievementChanged = (AchievedChanged, IconChanged, ImageChanged);
   TSteamAchievement = Class;
 
   TAchievementUpdatedEvent = procedure(AValue: TSteamAchievement; const WhatChanged: TAchievementChanged) of object;
-
-  { TSteamBitmap is a non-standard and hungry 24 bit RGBA data format used by Steam
-
-    It is necessary to convert this format to something your Application can use.
-
-    Ideally these bitmaps need caching (TBD)
-  }
-
-  TSteamBitmap = class
-  strict private
-    FIsValid: Boolean;
-    FWidth: Integer;
-    FHeight: Integer;
-    FBPP: Integer;
-    FImage: PByteArray;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure SetImageFormat(const ImWidth, ImHeight, BytesPerPixel: Integer);
-    function GetImageMemorySize(): UInt64;
-    procedure SetSteamImage(const AImage: PByteArray);
-    property IsValid: Boolean read FIsValid write FIsValid;
-    property Width: Integer read FWidth;
-    property Height: Integer read FHeight;
-    property BPP: Integer read FBPP;
-    property Image: PByteArray read FImage;
-  end;
 
   TCastleSteam = class;
   // Forward declaration for TSteamAchievement.Create
@@ -184,20 +162,17 @@ type
     FAppId: TAppId;
     FEnabled: Boolean;
     FUserID: CUserID;
+    FSteamApps: TSteamApps;
+    FSteamFriends: TSteamFriends;
+    FSteamInput: TSteamInput;
+    FSteamUtils: TSteamUtils;
     FAchievements: TSteamAchievementList;
     FUserStatsReceived: Boolean;
     FOnUserStatsReceived: TNotifyEvent;
     StoreStats: Boolean;
     // Pointers for ISteam....
-    SteamApps: Pointer;
-    SteamClient: Pointer;
-    SteamFriends: Pointer;
-    SteamInput: Pointer;
     SteamUser: Pointer;
     SteamUserStats: Pointer;
-    SteamUtils: Pointer;
-    SteamUserHandle: HSteamUser;
-    SteamPipeHandle: HSteamPipe;
     procedure CallbackUserStatsReceived(P: PUserStatsReceived);
     procedure CallbackUserAchievementIconFetched(P: PUserAchievementIconFetched);
     procedure GetAchievements;
@@ -219,9 +194,11 @@ type
       without this setter }
     procedure SetOnUserStatsReceived(const AValue: TNotifyEvent);
     function SteamVerifyLoad(P: Pointer; const S: String): Boolean;
+  protected
+    SteamClient: Pointer;
+    SteamUserHandle: HSteamUser;
+    SteamPipeHandle: HSteamPipe;
   public
-    function GetFriendImageHandle(const FriendID: CUserID; const Size: TIconSize = IconLarge): CInt;
-    function GetSteamBitmap(const ImageHandle: CInt): TSteamBitmap;
     { Connect to Steam and initialize everything.
 
       @orderedList(
@@ -246,11 +223,13 @@ type
     constructor Create(const AAppId: TAppId);
     destructor Destroy; override;
 
+    property Apps: TSteamApps read FSteamApps;
+    property Friends: TSteamFriends read FSteamFriends;
+    property Input: TSteamInput read FSteamInput;
+    property Utils: TSteamUtils read FSteamUtils;
+
     { Steam application id, given when creating this. }
     property AppId: TAppId read FAppId;
-
-    { The AppID Steam thinks we're using - this _may_ be different from AppID }
-    function GetSteamAppID: CInt;
 
     { Do we have Steam integration available.
 
@@ -318,31 +297,6 @@ type
       You still have to call @link(SetAchievement) to make it achieved. }
     procedure IndicateAchievementProgress(const AchievementId: String;
       const CurrentProgress, MaxProgress: UInt32);
-
-    { 2 digit ISO 3166-1-alpha-2 format country code this client
-      is running in (as looked up via an IP-to-location database) e.g "US" or "UK". }
-    function Country: String;
-
-    { Is the Steam overlay running and the user can access it.
-      The overlay process could take a few seconds to
-      start & hook the game process, so this function will initially return false
-      while the overlay is loading. }
-    function OverlayEnabled: Boolean;
-
-    { Is Steam running in VR mode. }
-    function RunningInVR: Boolean;
-
-    { Is currently running on the Steam Deck device. }
-    function RunningOnSteamDeck: Boolean;
-
-    { Build id of this app. }
-    function BuildId: Integer;
-
-    { Checks if the user owns the DLC and if the DLC is installed. }
-    function DlcInstalled(const DlcAppID: TAppId): Boolean;
-
-    { Current game language. }
-    function Language: String;
   end;
 
 implementation
@@ -432,28 +386,19 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     // Init SteamUser
     SteamUser := SteamAPI_ISteamClient_GetISteamUser(
        SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
-    SteamVerifyLoad(SteamApps, 'SteamApps');
+    SteamVerifyLoad(SteamUser, 'SteamUser');
 
     // Init SteamApps
-    SteamApps := SteamAPI_ISteamClient_GetISteamApps(
-      SteamClient, SteamUserHandle, SteamPipeHandle, STEAMAPPS_INTERFACE_VERSION);
-    SteamVerifyLoad(SteamApps, 'SteamApps');
+    FSteamApps := TSteamApps.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
     // Init SteamFriends
-    SteamFriends := SteamAPI_ISteamClient_GetISteamFriends(
-      SteamClient, SteamUserHandle, SteamPipeHandle, STEAMFRIENDS_INTERFACE_VERSION);
-    SteamVerifyLoad(SteamFriends, 'SteamFriends');
+    FSteamFriends := TSteamFriends.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
     // Init SteamUtils
-    SteamUtils := SteamAPI_ISteamClient_GetISteamUtils(
-       SteamClient, SteamPipeHandle, STEAMUTILS_INTERFACE_VERSION);
-    SteamVerifyLoad(SteamUtils, 'SteamUtils');
+    FSteamUtils := TSteamUtils.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
     // Init SteamInput
-    SteamInput := SteamAPI_ISteamClient_GetISteamInput(
-       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMINPUT_INTERFACE_VERSION);
-    SteamVerifyLoad(SteamInput, 'SteamInput');
-
+    FSteamInput := TSteamInput.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
     // Init SteamUserStats and request UserStats (will wait for callback, handled in Update)
     SteamUserStats := SteamAPI_ISteamClient_GetISteamUserStats(
@@ -498,6 +443,14 @@ begin
   FreeAndNil(FAchievements);
   if Enabled then
     begin
+      if Assigned(FSteamApps) then
+        FreeAndNil(FSteamApps);
+      if Assigned(FSteamFriends) then
+        FreeAndNil(FSteamFriends);
+      if Assigned(FSteamInput) then
+        FreeAndNil(FSteamInput);
+      if Assigned(FSteamUtils) then
+        FreeAndNil(FSteamUtils);
       SteamAPI_ISteamClient_BReleaseSteamPipe(SteamClient, SteamPipeHandle);
       SteamAPI_Shutdown();
     end;
@@ -568,55 +521,6 @@ begin
         FAchievements.Add(SteamAchievement.Key, SteamAchievement);
       end;
   WriteLnLog('Steam Achievements: %d', [Achievements.Count]);
-end;
-
-function TCastleSteam.GetSteamBitmap(const ImageHandle: CInt): TSteamBitmap;
-var
-  ImWidth, ImHeight: Integer;
-  R: TSteamBool;
-  Buf: Pointer;
-  BufSize: Integer;
-begin
-  Result := nil;
-  if ImageHandle = 0 then
-      Exit;
-
-  R := SteamAPI_ISteamUtils_GetImageSize(SteamUtils, ImageHandle, @ImWidth, @ImHeight);
-  if R then
-    begin
-      Result := TSteamBitmap.Create;
-      Result.SetImageFormat(ImWidth, ImHeight, 4);
-      try
-        BufSize := Result.GetImageMemorySize;
-        Buf := GetMem(BufSize);
-        if SteamAPI_ISteamUtils_GetImageRGBA(SteamUtils, ImageHandle, Buf, BufSize) then
-          begin
-            Result.SetSteamImage(Buf);
-            Result.IsValid := True;
-          end;
-      finally
-      end;
-    end
-  {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-  else
-    WriteLnLog('GetImageSize Failed for %d in GetStreamBitmap', [ImageHandle]);
-  {$else}
-  ;
-  {$endif}
-end;
-
-function TCastleSteam.GetFriendImageHandle(const FriendID: CUserID; const Size: TIconSize): CInt;
-begin
-  case Size of
-    IconSmall:
-      Result := SteamAPI_ISteamFriends_GetSmallFriendAvatar(SteamFriends, FriendID);
-    IconMedium:
-      Result := SteamAPI_ISteamFriends_GetMediumFriendAvatar(SteamFriends, FriendID);
-    IconLarge:
-      Result := SteamAPI_ISteamFriends_GetLargeFriendAvatar(SteamFriends, FriendID);
-  else
-    Result := 0;
-  end;
 end;
 
 procedure TCastleSteam.SteamError(const ErrorMsg: String);
@@ -750,68 +654,82 @@ procedure TCastleSteam.Update(Sender: TObject);
     PCallCompleted: PSteamAPICallCompleted;
     PTmpCallResult: Pointer;
     BFailed: TSteamBool;
+    CallbackHandled: Boolean;
   begin
+//    if Assigned(FSteamInput) and FSteamInput.Enabled then
+//      FSteamInput.RunFrame();
     SteamAPI_ManualDispatch_RunFrame(SteamPipeHandle);
     while SteamAPI_ManualDispatch_GetNextCallback(SteamPipeHandle, @Callback) do
     begin
       // Look at callback.m_iCallback to see what kind of callback it is,
       // and dispatch to appropriate handler(s)
-      WritelnWarning('Steam', 'Got Callback : ' + IntToStr(Callback.m_iCallback));
-      case Callback.m_iCallback of
-        TSteamAPICallCompleted.k_iCallback:
-          begin
-            // TODO: remove this warning once this code is tested
-            WritelnWarning('Steam', 'SteamAPICallCompleted callback: TODO untested handling');
+//      WritelnWarning('Steam', 'Got Callback : ' + IntToStr(Callback.m_iCallback));
+      CallbackHandled := False;
+      if Not(CallbackHandled) and Assigned(FSteamInput) then
+        CallbackHandled := FSteamInput.RunCallback(Callback);
+      if Not(CallbackHandled) and Assigned(FSteamApps) then
+        CallbackHandled := FSteamApps.RunCallback(Callback);
+      if Not(CallbackHandled) and Assigned(FSteamFriends) then
+        CallbackHandled := FSteamFriends.RunCallback(Callback);
+      if Not(CallbackHandled) and Assigned(FSteamUtils) then
+        CallbackHandled := FSteamUtils.RunCallback(Callback);
+      if CallbackHandled = False then
+        begin
+          case Callback.m_iCallback of
+            TSteamAPICallCompleted.k_iCallback:
+              begin
+                // TODO: remove this warning once this code is tested
+                WritelnWarning('Steam', 'SteamAPICallCompleted callback: TODO untested handling');
 
-            // Check for dispatching API call results
-            PCallCompleted := PSteamAPICallCompleted(Callback.m_pubParam);
-            PTmpCallResult := GetMem(Callback.m_cubParam);
-            if SteamAPI_ManualDispatch_GetAPICallResult(SteamPipeHandle,
-                PCallCompleted^.m_hAsyncCall, PTmpCallResult, Callback.m_cubParam,
-                Callback.m_iCallback, @BFailed) then
-            begin
-              { Dispatch the call result to the registered handler(s) for the
-                call identified by pCallCompleted^.m_hAsyncCall
+                // Check for dispatching API call results
+                PCallCompleted := PSteamAPICallCompleted(Callback.m_pubParam);
+                PTmpCallResult := GetMem(Callback.m_cubParam);
+                if SteamAPI_ManualDispatch_GetAPICallResult(SteamPipeHandle,
+                    PCallCompleted^.m_hAsyncCall, PTmpCallResult, Callback.m_cubParam,
+                    Callback.m_iCallback, @BFailed) then
+                begin
+                  { Dispatch the call result to the registered handler(s) for the
+                    call identified by pCallCompleted^.m_hAsyncCall
 
-                Note (CGE): The piece of code handling SteamAPICallCompleted
-                is adjusted from the example code in C API about
-                SteamAPI_ManualDispatch_GetNextCallback.
-                But right now, we don't have any need for this,
-                and the log below never happens in our Steam usage so far.
-              }
-              {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
-              WritelnLog('Steam', 'Dispatch the call result to the handlers for m_iCallback %d, m_hAsyncCall %d', [
-                PCallCompleted^.m_iCallback,
-                PCallCompleted^.m_hAsyncCall
-              ]);
-              {$endif}
-            end;
-            FreeMem(PTmpCallResult);
-          end;
-        TUserStatsReceived.k_iCallback:
-          begin
-            {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
-            WritelnLog('Steam', 'Handle Stats Received (m_iCallback : %d)', [Callback.m_iCallback]);
-            {$endif}
-            CallbackUserStatsReceived(PUserStatsReceived(Callback.m_pubParam));
-          end;
-        TUserAchievementIconFetched.k_iCallback:
-          begin
-            if(SizeOf(TUserAchievementIconFetched) <> Callback.m_cubParam) then
-              WritelnLog('Callbacks', 'TUserAchievementIconFetched Size = %d, should be %d)', [SizeOf(TUserAchievementIconFetched), Callback.m_cubParam])
+                    Note (CGE): The piece of code handling SteamAPICallCompleted
+                    is adjusted from the example code in C API about
+                    SteamAPI_ManualDispatch_GetNextCallback.
+                    But right now, we don't have any need for this,
+                    and the log below never happens in our Steam usage so far.
+                  }
+                  {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
+                  WritelnLog('Steam', 'Dispatch the call result to the handlers for m_iCallback %d, m_hAsyncCall %d', [
+                    PCallCompleted^.m_iCallback,
+                    PCallCompleted^.m_hAsyncCall
+                  ]);
+                  {$endif}
+                end;
+                FreeMem(PTmpCallResult);
+              end;
+            TUserStatsReceived.k_iCallback:
+              begin
+                {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
+                WritelnLog('Steam', 'Handle Stats Received (m_iCallback : %d)', [Callback.m_iCallback]);
+                {$endif}
+                CallbackUserStatsReceived(PUserStatsReceived(Callback.m_pubParam));
+              end;
+            TUserAchievementIconFetched.k_iCallback:
+              begin
+                if(SizeOf(TUserAchievementIconFetched) <> Callback.m_cubParam) then
+                  WritelnLog('Callbacks', 'TUserAchievementIconFetched Size = %d, should be %d)', [SizeOf(TUserAchievementIconFetched), Callback.m_cubParam])
+                else
+                  CallbackUserAchievementIconFetched(PUserAchievementIconFetched(Callback.m_pubParam));
+              end;
             else
-              CallbackUserAchievementIconFetched(PUserAchievementIconFetched(Callback.m_pubParam));
-          end;
-        else
-          begin
-            {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
-            WritelnLog('Steam', 'Callback m_iCallback %d, we ignore it now', [
-              Callback.m_iCallback
-            ]);
-            {$endif}
+              begin
+                {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
+                WritelnLog('Steam', 'Callback m_iCallback %d, we ignore it now', [
+                  Callback.m_iCallback
+                ]);
+                {$endif}
+              end;
           end;
       end;
-
       // We must call this before next SteamAPI_ManualDispatch_GetNextCallback.
       SteamAPI_ManualDispatch_FreeLastCallback(SteamPipeHandle);
     end;
@@ -827,62 +745,6 @@ begin
   if UserStatsReceived and StoreStats then
     if SteamAPI_ISteamUserStats_StoreStats(SteamUserStats) then // repeat it every Update until success
       StoreStats := false;
-end;
-
-function TCastleSteam.GetSteamAppID: CInt;
-begin
-  if not Enabled then
-    Exit(-1);
-  Result := SteamAPI_ISteamUtils_GetAppID(SteamUtils);
-end;
-
-function TCastleSteam.Country: String;
-begin
-  if not Enabled then
-    Exit('');
-  Result := String(SteamAPI_ISteamUtils_GetIPCountry(SteamUtils));
-end;
-
-function TCastleSteam.OverlayEnabled: Boolean;
-begin
-  if not Enabled then
-    Exit(false);
-  Result := SteamAPI_ISteamUtils_IsOverlayEnabled(SteamUtils);
-end;
-
-function TCastleSteam.RunningInVR: Boolean;
-begin
-  if not Enabled then
-    Exit(false);
-  Result := SteamAPI_ISteamUtils_IsSteamRunningInVR(SteamUtils);
-end;
-
-function TCastleSteam.RunningOnSteamDeck: Boolean;
-begin
-  if not Enabled then
-    Exit(false);
-  Result := SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(SteamUtils);
-end;
-
-function TCastleSteam.BuildId: Integer;
-begin
-  if not Enabled then
-    Exit(0);
-  Result := SteamAPI_ISteamApps_GetAppBuildId(SteamApps);
-end;
-
-function TCastleSteam.DlcInstalled(const DlcAppID: TAppId): Boolean;
-begin
-  if not Enabled then
-    Exit(false);
-  Result := SteamAPI_ISteamApps_BIsDlcInstalled(SteamApps, DlcAppID);
-end;
-
-function TCastleSteam.Language: String;
-begin
-  if not Enabled then
-    Exit('');
-  Result := String(SteamAPI_ISteamApps_GetCurrentGameLanguage(SteamApps));
 end;
 
 { TSteamAchievement }
@@ -954,37 +816,6 @@ begin
       if Assigned(OnAchievementUpdated) then
         OnAchievementUpdated(Self, IconChanged);
     end;
-end;
-
-{ TSteamBitmap }
-
-constructor TSteamBitmap.Create;
-begin
-
-end;
-
-destructor TSteamBitmap.Destroy;
-begin
-  if Assigned(FImage) then
-    FreeMem(Fimage);
-  inherited;
-end;
-
-function TSteamBitmap.GetImageMemorySize: UInt64;
-begin
-  Result := FWidth * FHeight * FBPP;
-end;
-
-procedure TSteamBitmap.SetSteamImage(const AImage: PByteArray);
-begin
-  FImage := AImage;
-end;
-
-procedure TSteamBitmap.SetImageFormat(const ImWidth, ImHeight, BytesPerPixel: Integer);
-begin
-  FWidth := ImWidth;
-  FHeight := ImHeight;
-  FBPP := BytesPerPixel;
 end;
 
 { TIndexedObjectList<TObj> }

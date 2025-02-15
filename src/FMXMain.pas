@@ -55,6 +55,7 @@ type
     procedure AppUpdate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure SetAppID(const NewAppId: Integer);
+    procedure Button1Click(Sender: TObject);
   private
     { Private declarations }
     UpCall: Integer;
@@ -72,7 +73,7 @@ type
 var
   Form1: TForm1;
   Steam: TSteamApp;
-  AppId: Integer = 2060130; // 316790;
+  AppId: Integer = 2275430; // 2478970;// 2060130; // 316790;
   SystemRestart: Boolean;
 
 
@@ -80,7 +81,7 @@ implementation
 
 {$R *.fmx}
 
-uses IOUtils, RTTI;
+uses IOUtils, RTTI, SteamTypes;
 
 procedure TForm1.SetNewAppID;
 begin
@@ -94,7 +95,9 @@ begin
         218620: SetAppID(573060); // # Logistical
         573060: SetAppID(228280); // # BG 2
         228280: SetAppID(1100410); // # Commandos 2
-        1100410: SetAppID(2060130); // # Return to Monkey Island
+        1100410: SetAppID(2478970); // # TR 1-3
+        2478970: SetAppID(2525380); // # TR 4-6
+        2525380: SetAppID(2060130); // # Return to Monkey Island
       else
         SetAppID(2060130); // # Return to Monkey Island
       end;
@@ -102,6 +105,26 @@ begin
 
 end;
 
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  Ctrl: TInputHandle;
+  NCtrl: Integer;
+begin
+  NCtrl := -1;
+  If Assigned(Steam) and Assigned(Steam.Input) and Steam.Input.Enabled then
+    begin
+      Steam.Input.DeviceCallbacks := True;
+      NCtrl := Steam.Input.GetConnectedControllers;
+      Ctrl := Steam.Input.InputHandle[0];
+      WriteLnLog('Detected %d Controllers, Ctrl #0 = %d', [NCtrl, Ctrl]);
+      if Ctrl <> 0 then
+        Steam.Input.ShowBindingPanel(Ctrl);
+    end
+  else
+    WriteLnLog('No Steam / Steam.Input');
+
+end;
 
 procedure TForm1.DoAchieved(Sender: TObject);
 var
@@ -133,13 +156,12 @@ begin
   if Assigned(Steam) then
     begin
       AchievementCount := Steam.Achievements.Count;
-      Label1.Text := 'Steam (' + Steam.Country + ') - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available - Update : ' + IntToStr(Steam.UpdateCount);
+      Label1.Text := 'Steam (' + Steam.Utils.Country + ') - User Stats Received - ' + IntToStr(AchievementCount) + ' Achievements available - Update : ' + IntToStr(Steam.UpdateCount);
     end;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  GetAppID;
   UpdateID := False;
   OutLog := Memo1.Lines;
   StartSteam;
@@ -169,6 +191,7 @@ begin
       Steam.Interval := 17; // 60 calls per second
       Steam.OnUserStatsReceived := UserStatsReceived;
       Steam.OnAppUpdate := AppUpdate;
+      AppID := Steam.Utils.GetSteamAppID;
     end;
 end;
 
@@ -200,7 +223,7 @@ end;
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
   StopSteam;
-  SetNewAppID;
+//  SetNewAppID;
   IOUtils.TFile.WriteAllText('lastrun.log', Memo1.Text);
 end;
 
@@ -211,14 +234,16 @@ var
 begin
   if Assigned(Steam) then
     begin
+      Steam.Input.Enabled := True;
+
       Label2.Text := 'AppID : ' + IntToStr(AppID);
-      Label3.Text := 'Build : ' + IntToStr(Steam.BuildId);
-      Label4.Text := 'Language : ' + Steam.Language;
+      Label3.Text := 'Build : ' + IntToStr(Steam.Apps.BuildId);
+      Label4.Text := 'Language : ' + Steam.Apps.Language;
 
       Checkbox1.Text := 'Running On SteamDeck';
-      CheckBox1.IsChecked := Steam.RunningOnSteamDeck;
+      CheckBox1.IsChecked := Steam.Utils.RunningOnSteamDeck;
       Checkbox2.Text := 'Overlay Enabled';
-      CheckBox2.IsChecked := Steam.OverlayEnabled;
+      CheckBox2.IsChecked := Steam.Utils.OverlayEnabled;
 
       Steam.ConvertSteamImage(Steam.Avatar, Avatar.Bitmap);
       Inc(UpCall);

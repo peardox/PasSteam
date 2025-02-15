@@ -5,7 +5,9 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
-  SteamApp.vcl;
+  SteamApp.vcl,
+  SteamTypes,
+  SteamSubsystem;
 
 type
   TAchievementLine = Class(TPanel)
