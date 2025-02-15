@@ -31,6 +31,7 @@ uses Classes, CTypes, SysUtils,
   SteamApps,
   SteamInput,
   SteamFriends,
+  SteamUser,
   SteamUtils,
   CastleInternalSteamApi;
 
@@ -165,13 +166,13 @@ type
     FSteamApps: TSteamApps;
     FSteamFriends: TSteamFriends;
     FSteamInput: TSteamInput;
+    FSteamUser: TSteamUser;
     FSteamUtils: TSteamUtils;
     FAchievements: TSteamAchievementList;
     FUserStatsReceived: Boolean;
     FOnUserStatsReceived: TNotifyEvent;
     StoreStats: Boolean;
     // Pointers for ISteam....
-    SteamUser: Pointer;
     SteamUserStats: Pointer;
     procedure CallbackUserStatsReceived(P: PUserStatsReceived);
     procedure CallbackUserAchievementIconFetched(P: PUserAchievementIconFetched);
@@ -226,6 +227,7 @@ type
     property Apps: TSteamApps read FSteamApps;
     property Friends: TSteamFriends read FSteamFriends;
     property Input: TSteamInput read FSteamInput;
+    property User: TSteamUser read FSteamUser;
     property Utils: TSteamUtils read FSteamUtils;
 
     { Steam application id, given when creating this. }
@@ -384,10 +386,12 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     SteamPipeHandle := SteamAPI_GetHSteamPipe();
 
     // Init SteamUser
+    FSteamUser := TSteamUser.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
+    {
     SteamUser := SteamAPI_ISteamClient_GetISteamUser(
        SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
     SteamVerifyLoad(SteamUser, 'SteamUser');
-
+    }
     // Init SteamApps
     FSteamApps := TSteamApps.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
@@ -405,7 +409,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSERSTATS_INTERFACE_VERSION);
     SteamVerifyLoad(SteamUserStats, 'SteamUserStats');
 
-    FUserId := SteamAPI_ISteamUser_GetSteamID(SteamUser);
+    FUserId := User.SteamID;
     {$if STEAM_API_VERSION < 1.61}
     SteamAPI_ISteamUserStats_RequestCurrentStats(SteamUserStats);
     {$else}
@@ -449,6 +453,8 @@ begin
         FreeAndNil(FSteamFriends);
       if Assigned(FSteamInput) then
         FreeAndNil(FSteamInput);
+      if Assigned(FSteamUser) then
+        FreeAndNil(FSteamUser);
       if Assigned(FSteamUtils) then
         FreeAndNil(FSteamUtils);
       SteamAPI_ISteamClient_BReleaseSteamPipe(SteamClient, SteamPipeHandle);
@@ -673,6 +679,12 @@ procedure TCastleSteam.Update(Sender: TObject);
         CallbackHandled := FSteamFriends.RunCallback(Callback);
       if Not(CallbackHandled) and Assigned(FSteamUtils) then
         CallbackHandled := FSteamUtils.RunCallback(Callback);
+{
+      if Not(CallbackHandled) and Assigned(FSteamUser) then
+        CallbackHandled := FSteamUser.RunCallback(Callback);
+      if Not(CallbackHandled) and Assigned(FSteamUserStats) then
+        CallbackHandled := FSteamUser.RunCallbackStats(Callback);
+}
       if CallbackHandled = False then
         begin
           case Callback.m_iCallback of

@@ -114,7 +114,6 @@ begin
   NCtrl := -1;
   If Assigned(Steam) and Assigned(Steam.Input) and Steam.Input.Enabled then
     begin
-      Steam.Input.DeviceCallbacks := True;
       NCtrl := Steam.Input.GetConnectedControllers;
       Ctrl := Steam.Input.InputHandle[0];
       WriteLnLog('Detected %d Controllers, Ctrl #0 = %d', [NCtrl, Ctrl]);

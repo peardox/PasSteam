@@ -289,40 +289,40 @@ var
   // which is actually "flat" (C, no classes) Steam API corresponding to the C++ API
 
   // ISteamClient
-  SteamAPI_ISteamClient_BReleaseSteamPipe: function (SteamClient: Pointer; hSteamPipe: HSteamPipe): LongBool; CDecl;
-  SteamAPI_ISteamClient_ReleaseUser: procedure (SteamClient: Pointer; hSteamPipe: HSteamPipe; hSteamUser: HSteamUser); CDecl;
+  SteamAPI_ISteamClient_BReleaseSteamPipe:     function  (SteamClient: Pointer; hSteamPipe: HSteamPipe): LongBool; CDecl;
+  SteamAPI_ISteamClient_ReleaseUser:           procedure (SteamClient: Pointer; hSteamPipe: HSteamPipe; hSteamUser: HSteamUser); CDecl;
   SteamAPI_ISteamClient_SetWarningMessageHook: procedure (SteamClient: Pointer; WarningMessageHook: SteamAPIWarningMessageHook); CDecl;
   // SteamUtils has no SteamUser
-  SteamAPI_ISteamClient_GetISteamUtils: function (SteamClient: Pointer; SteamPipeHandle: HSteamPipe; const SteamUtilsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamUtils:        function  (SteamClient: Pointer; SteamPipeHandle: HSteamPipe; const SteamUtilsInterfaceVersion: PAnsiChar): Pointer; CDecl;
   // Steam_ISteamClient_GetISteam...... use SteamClient pointer
-  SteamAPI_ISteamClient_GetISteamApps:      function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamAppsInterfaceVersion: PAnsiChar): Pointer; CDecl;
-  SteamAPI_ISteamClient_GetISteamFriends:   function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamFriendsInterfaceVersion: PAnsiChar): Pointer; CDecl;
-  SteamAPI_ISteamClient_GetISteamInput:     function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamInputInterfaceVersion: PAnsiChar): Pointer; CDecl;
-  SteamAPI_ISteamClient_GetISteamUser:      function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserInterfaceVersion: PAnsiChar): Pointer; CDecl;
-  SteamAPI_ISteamClient_GetISteamUserStats: function (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamApps:         function  (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamAppsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamFriends:      function  (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamFriendsInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamInput:        function  (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamInputInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamUser:         function  (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserInterfaceVersion: PAnsiChar): Pointer; CDecl;
+  SteamAPI_ISteamClient_GetISteamUserStats:    function  (SteamClient: Pointer; SteamUserHandle: HSteamUser; SteamPipeHandle: HSteamPipe; const SteamUserStatsInterfaceVersion: PAnsiChar): Pointer; CDecl;
 
   // ISteamUserStats
-  SteamAPI_ISteamUserStats_ClearAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
-  SteamAPI_ISteamUserStats_GetAchievement: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; Achieved: PSteamBool): TSteamBool; CDecl;
-  SteamAPI_ISteamUserStats_GetAchievementAchievedPercent: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; pflPercent: PSingle): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_ClearAchievement:                  function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievement:                    function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar; Achieved: PSteamBool): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementAchievedPercent:     function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar; pflPercent: PSingle): TSteamBool; CDecl;
   // Returns whether the achievement has been completed and the Date/Time of completion if Achieved = True
-  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: PUInt32): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime:       function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const Achieved: PSteamBool; UnlockTime: PUInt32): TSteamBool; CDecl;
   // Returns attribute of the achievement, AchievementKey may be name, desc or hidden which return UTF8 string with "0" or "1" indicating hidden state
-  SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const AchievementKey: PAnsiChar ): PAnsiChar; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute:    function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const AchievementKey: PAnsiChar ): PAnsiChar; CDecl;
   // Returns a handle for the Achievement's image - needs further processing via callback
-  SteamAPI_ISteamUserStats_GetAchievementIcon: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar): UInt32; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementIcon:                function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar): UInt32; CDecl;
   // Returns string-ID of the achievement, not a human readable name
-  SteamAPI_ISteamUserStats_GetAchievementName: function (SteamUserStats: Pointer; AchievementId: UInt32 ): PAnsiChar; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementName:                function  (SteamUserStats: Pointer; AchievementId: UInt32 ): PAnsiChar; CDecl;
   // Not Documented but in headers
-  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PSingle; const pnMaxProgress: PSingle): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsFloat: function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PSingle; const pnMaxProgress: PSingle): TSteamBool; CDecl;
   // Not Documented but in headers
-  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PInt32; const pnMaxProgress: PInt32): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_GetAchievementProgressLimitsInt32: function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pnMinProgress: PInt32; const pnMaxProgress: PInt32): TSteamBool; CDecl;
 
-  SteamAPI_ISteamUserStats_GetNumAchievements: function (SteamUserStats: Pointer): UInt32; CDecl;
+  SteamAPI_ISteamUserStats_GetNumAchievements:                function  (SteamUserStats: Pointer): UInt32; CDecl;
   // Show Steam popup "achievement : 30/100", see https://partner.steamgames.com/doc/api/ISteamUserStats#IndicateAchievementProgress
-  SteamAPI_ISteamUserStats_IndicateAchievementProgress: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; CurrentProgress: UInt32; MaxProgress: UInt32): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_IndicateAchievementProgress:       function  (SteamUserStats: Pointer; const AchievementName: PAnsiChar; CurrentProgress: UInt32; MaxProgress: UInt32): TSteamBool; CDecl;
   {$if STEAM_API_VERSION < 1.61}
-  SteamAPI_ISteamUserStats_RequestCurrentStats: function (SteamUserStats: Pointer): TSteamBool; CDecl;
+  SteamAPI_ISteamUserStats_RequestCurrentStats:               function  (SteamUserStats: Pointer): TSteamBool; CDecl;
   {$endif}
   SteamAPI_ISteamUserStats_GetStatFloat: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pData: PSingle): TSteamBool; CDecl;
   SteamAPI_ISteamUserStats_GetStatInt32: function (SteamUserStats: Pointer; const AchievementName: PAnsiChar; const pData: PInt32): TSteamBool; CDecl;
@@ -334,56 +334,55 @@ var
 
   // ISteamInput
   // A versioned accessor is exported by the library
-  SteamAPI_SteamInput:                                      function (): ISteamInput; CDecl;
-  SteamAPI_ISteamInput_Init:                                function (SteamInput: Pointer; bExplicitlyCallRunFrame: LongBool): LongBool; CDecl;
-  SteamAPI_ISteamInput_Shutdown:                            function (SteamInput: Pointer): LongBool; CDecl;
-
-  SteamAPI_ISteamInput_ActivateActionSet:                   procedure (SteamInput: Pointer; inputHandle: TInputHandle;  actionSetHandle: TSteamInputActionSetHandle );
-  SteamAPI_ISteamInput_ActivateActionSetLayer:              procedure (SteamInput: Pointer; inputHandle: TInputHandle; actionSetLayerHandle: TSteamInputActionSetHandle );
-  SteamAPI_ISteamInput_BNewDataAvailable:                   function (SteamInput: Pointer): LongBool; CDecl;
-  SteamAPI_ISteamInput_BWaitForData:                        function (SteamInput: Pointer;  bWaitForever: LongBool; unTimeout: UInt32 ): LongBool; CDecl;
-  SteamAPI_ISteamInput_DeactivateActionSetLayer:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; actionSetLayerHandle: TSteamInputActionSetHandle );
-  SteamAPI_ISteamInput_DeactivateAllActionSetLayers:        procedure (SteamInput: Pointer; inputHandle: TInputHandle );
-  SteamAPI_ISteamInput_EnableActionEventCallbacks:          procedure (SteamInput: Pointer; pCallback : PSteamInputActionEventCallbackPointer );
-  SteamAPI_ISteamInput_EnableDeviceCallbacks:               procedure (SteamInput: Pointer);
-  SteamAPI_ISteamInput_GetActionOriginFromXboxOrigin:       function (SteamInput: Pointer; inputHandle: TInputHandle;  eOrigin: EXboxOrigin ): EInputActionOrigin; CDecl;
-  SteamAPI_ISteamInput_GetActionSetHandle:                  function (SteamInput: Pointer; pszActionSetName: PAnsiChar): TSteamInputActionSetHandle; CDecl;
-  SteamAPI_ISteamInput_GetActiveActionSetLayers:            function (SteamInput: Pointer; inputHandle: TInputHandle; handlesOut: PSteamInputActionSetHandle ): CInt; CDecl;
-  SteamAPI_ISteamInput_GetAnalogActionData:                 function (SteamInput: Pointer; inputHandle: TInputHandle;  analogActionHandle: TSteamInputAnalogActionHandle ): TSteamInputAnalogActionData; CDecl;
-  SteamAPI_ISteamInput_GetAnalogActionHandle:               function (SteamInput: Pointer; pszActionName: PAnsiChar ): TSteamInputAnalogActionHandle; CDecl;
-  SteamAPI_ISteamInput_GetAnalogActionOrigins:              function (SteamInput: Pointer; inputHandle: TInputHandle; actionSetHandle: TSteamInputActionSetHandle; analogActionHandle: TSteamInputAnalogActionHandle; originsOut: PEInputActionOrigin ): CInt; CDecl;
-  SteamAPI_ISteamInput_GetConnectedControllers:             function (SteamInput: Pointer; handlesOut: PSteamInputHandle): CInt; CDecl;
-  SteamAPI_ISteamInput_GetControllerForGamepadIndex:        function (SteamInput: Pointer; nIndex: CInt ): TInputHandle; CDecl;
-  SteamAPI_ISteamInput_GetCurrentActionSet:                 function (SteamInput: Pointer; inputHandle: TInputHandle ): TSteamInputActionSetHandle; CDecl;
-  SteamAPI_ISteamInput_GetDeviceBindingRevision:            function (SteamInput: Pointer; inputHandle: TInputHandle;  pMajor: PCInt; pMinor: PCInt ): LongBool; CDecl;
-  SteamAPI_ISteamInput_GetDigitalActionData:                function (SteamInput: Pointer; inputHandle: TInputHandle;  digitalActionHandle: TSteamInputDigitalActionHandle ): TSteamInputDigitalActionData; CDecl;
-  SteamAPI_ISteamInput_GetDigitalActionHandle:              function (SteamInput: Pointer; pszActionName: PAnsiChar ): TSteamInputDigitalActionHandle; CDecl;
-  SteamAPI_ISteamInput_GetDigitalActionOrigins:             function (SteamInput: Pointer; inputHandle: TInputHandle; actionSetHandle: TSteamInputActionSetHandle; digitalActionHandle: TSteamInputDigitalActionHandle; originsOut: PEInputActionOrigin): CInt; CDecl;
-  SteamAPI_ISteamInput_GetGamepadIndexForController:        function (SteamInput: Pointer; ulinputHandle: TInputHandle ): CInt; CDecl;
-  SteamAPI_ISteamInput_GetGlyphForActionOrigin_Legacy:      function (SteamInput: Pointer; eOrigin: EInputActionOrigin ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_GetGlyphForXboxOrigin:               function (SteamInput: Pointer; eOrigin: EXboxOrigin ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_GetGlyphPNGForActionOrigin:          function (SteamInput: Pointer; eOrigin: EInputActionOrigin; eSize: ESteamInputGlyphSize; unFlags: UInt32 ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_GetGlyphSVGForActionOrigin:          function (SteamInput: Pointer; eOrigin: EInputActionOrigin; unFlags: UInt32 ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_GetInputTypeForHandle:               function (SteamInput: Pointer; inputHandle: TInputHandle ): ESteamInputType; CDecl;
-  SteamAPI_ISteamInput_GetMotionData:                       function (SteamInput: Pointer; inputHandle: TInputHandle ): TSteamInputMotionData; CDecl;
-  SteamAPI_ISteamInput_GetRemotePlaySessionID:              function (SteamInput: Pointer; inputHandle: TInputHandle ): UInt32; CDecl;
-  SteamAPI_ISteamInput_GetSessionInputConfigurationSettings:function (SteamInput: Pointer): UInt16; CDecl;
-  SteamAPI_ISteamInput_GetStringForActionOrigin:            function (SteamInput: Pointer; eOrigin: EInputActionOrigin ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_GetStringForAnalogActionName:        function (SteamInput: Pointer; eActionHandle: TSteamInputAnalogActionHandle ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_GetStringForDigitalActionName:       function (SteamInput: Pointer; eActionHandle: TSteamInputDigitalActionHandle ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_GetStringForXboxOrigin:              function (SteamInput: Pointer; eOrigin: EXboxOrigin ): PAnsiChar; CDecl;
-  SteamAPI_ISteamInput_Legacy_TriggerHapticPulse:           procedure (SteamInput: Pointer; inputHandle: TInputHandle; eTargetPad: ESteamControllerPad; usDurationMicroSec: UInt16 );
-  SteamAPI_ISteamInput_Legacy_TriggerRepeatedHapticPulse:   procedure (SteamInput: Pointer; inputHandle: TInputHandle; eTargetPad: ESteamControllerPad; usDurationMicroSec: UInt16; usOffMicroSec: UInt16; unRepeat: UInt16; nFlags: CInt );
-  SteamAPI_ISteamInput_RunFrame:                            procedure (SteamInput: Pointer; bReservedValue: LongBool);
-  SteamAPI_ISteamInput_SetDualSenseTriggerEffect:           procedure (SteamInput: Pointer; inputHandle: TInputHandle; const pParam: PScePadTriggerEffectParam );
-  SteamAPI_ISteamInput_SetInputActionManifestFilePath:      function (SteamInput: Pointer; pchInputActionManifestAbsolutePath: PAnsiChar ): LongBool; CDecl;
-  SteamAPI_ISteamInput_SetLEDColor:                         procedure (SteamInput: Pointer; inputHandle: TInputHandle; nColorR: UInt8; nColorG: UInt8; nColorB: UInt8; nFlags: UInt32 );
-  SteamAPI_ISteamInput_ShowBindingPanel:                    function (SteamInput: Pointer; inputHandle: TInputHandle ): LongBool; CDecl;
-  SteamAPI_ISteamInput_StopAnalogActionMomentum:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; eAction: TSteamInputAnalogActionHandle );
-  SteamAPI_ISteamInput_TranslateActionOrigin:               function (SteamInput: Pointer; eDestinationInputType: ESteamInputType; eSourceOrigin: EInputActionOrigin ): EInputActionOrigin; CDecl;
-  SteamAPI_ISteamInput_TriggerSimpleHapticEvent:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; eHapticLocation: EControllerHapticLocation; nIntensity: UInt8; nGainDB: Char; nOtherIntensity: UInt8; nOtherGainDB: Char );
-  SteamAPI_ISteamInput_TriggerVibration:                    procedure (SteamInput: Pointer; inputHandle: TInputHandle; usLeftSpeed: UInt16; usRightSpeed: UInt16 );
-  SteamAPI_ISteamInput_TriggerVibrationExtended:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; usLeftSpeed: UInt16; usRightSpeed: UInt16; usLeftTriggerSpeed: UInt16; usRightTriggerSpeed: UInt16 );
+  SteamAPI_SteamInput:                                      function  (): ISteamInput; CDecl;
+  SteamAPI_ISteamInput_Init:                                function  (SteamInput: Pointer; bExplicitlyCallRunFrame: LongBool): LongBool; CDecl;
+  SteamAPI_ISteamInput_Shutdown:                            function  (SteamInput: Pointer): LongBool; CDecl;
+  SteamAPI_ISteamInput_ActivateActionSet:                   procedure (SteamInput: Pointer; inputHandle: TInputHandle;  actionSetHandle: TSteamInputActionSetHandle ); CDecl;
+  SteamAPI_ISteamInput_ActivateActionSetLayer:              procedure (SteamInput: Pointer; inputHandle: TInputHandle; actionSetLayerHandle: TSteamInputActionSetHandle ); CDecl;
+  SteamAPI_ISteamInput_BNewDataAvailable:                   function  (SteamInput: Pointer): LongBool; CDecl;
+  SteamAPI_ISteamInput_BWaitForData:                        function  (SteamInput: Pointer;  bWaitForever: LongBool; unTimeout: UInt32 ): LongBool; CDecl;
+  SteamAPI_ISteamInput_DeactivateActionSetLayer:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; actionSetLayerHandle: TSteamInputActionSetHandle );  CDecl;
+  SteamAPI_ISteamInput_DeactivateAllActionSetLayers:        procedure (SteamInput: Pointer; inputHandle: TInputHandle ); CDecl;
+  SteamAPI_ISteamInput_EnableActionEventCallbacks:          procedure (SteamInput: Pointer; pCallback: TActionCallback); CDecl;
+  SteamAPI_ISteamInput_EnableDeviceCallbacks:               procedure (SteamInput: Pointer); CDecl;
+  SteamAPI_ISteamInput_GetActionOriginFromXboxOrigin:       function  (SteamInput: Pointer; inputHandle: TInputHandle;  eOrigin: EXboxOrigin ): EInputActionOrigin; CDecl;
+  SteamAPI_ISteamInput_GetActionSetHandle:                  function  (SteamInput: Pointer; pszActionSetName: PAnsiChar): TSteamInputActionSetHandle; CDecl;
+  SteamAPI_ISteamInput_GetActiveActionSetLayers:            function  (SteamInput: Pointer; inputHandle: TInputHandle; handlesOut: PSteamInputActionSetHandle ): CInt; CDecl;
+  SteamAPI_ISteamInput_GetAnalogActionData:                 function  (SteamInput: Pointer; inputHandle: TInputHandle;  analogActionHandle: TSteamInputAnalogActionHandle ): TSteamInputAnalogActionData; CDecl;
+  SteamAPI_ISteamInput_GetAnalogActionHandle:               function  (SteamInput: Pointer; pszActionName: PAnsiChar ): TSteamInputAnalogActionHandle; CDecl;
+  SteamAPI_ISteamInput_GetAnalogActionOrigins:              function  (SteamInput: Pointer; inputHandle: TInputHandle; actionSetHandle: TSteamInputActionSetHandle; analogActionHandle: TSteamInputAnalogActionHandle; originsOut: PEInputActionOrigin ): CInt; CDecl;
+  SteamAPI_ISteamInput_GetConnectedControllers:             function  (SteamInput: Pointer; handlesOut: PSteamInputHandle): CInt; CDecl;
+  SteamAPI_ISteamInput_GetControllerForGamepadIndex:        function  (SteamInput: Pointer; nIndex: CInt ): TInputHandle; CDecl;
+  SteamAPI_ISteamInput_GetCurrentActionSet:                 function  (SteamInput: Pointer; inputHandle: TInputHandle ): TSteamInputActionSetHandle; CDecl;
+  SteamAPI_ISteamInput_GetDeviceBindingRevision:            function  (SteamInput: Pointer; inputHandle: TInputHandle;  pMajor: PCInt; pMinor: PCInt ): LongBool; CDecl;
+  SteamAPI_ISteamInput_GetDigitalActionData:                function  (SteamInput: Pointer; inputHandle: TInputHandle;  digitalActionHandle: TSteamInputDigitalActionHandle ): TSteamInputDigitalActionData; CDecl;
+  SteamAPI_ISteamInput_GetDigitalActionHandle:              function  (SteamInput: Pointer; pszActionName: PAnsiChar ): TSteamInputDigitalActionHandle; CDecl;
+  SteamAPI_ISteamInput_GetDigitalActionOrigins:             function  (SteamInput: Pointer; inputHandle: TInputHandle; actionSetHandle: TSteamInputActionSetHandle; digitalActionHandle: TSteamInputDigitalActionHandle; originsOut: PEInputActionOrigin): CInt; CDecl;
+  SteamAPI_ISteamInput_GetGamepadIndexForController:        function  (SteamInput: Pointer; ulinputHandle: TInputHandle ): CInt; CDecl;
+  SteamAPI_ISteamInput_GetGlyphForActionOrigin_Legacy:      function  (SteamInput: Pointer; eOrigin: EInputActionOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetGlyphForXboxOrigin:               function  (SteamInput: Pointer; eOrigin: EXboxOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetGlyphPNGForActionOrigin:          function  (SteamInput: Pointer; eOrigin: EInputActionOrigin; eSize: ESteamInputGlyphSize; unFlags: UInt32 ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetGlyphSVGForActionOrigin:          function  (SteamInput: Pointer; eOrigin: EInputActionOrigin; unFlags: UInt32 ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetInputTypeForHandle:               function  (SteamInput: Pointer; inputHandle: TInputHandle ): ESteamInputType; CDecl;
+  SteamAPI_ISteamInput_GetMotionData:                       function  (SteamInput: Pointer; inputHandle: TInputHandle ): TSteamInputMotionData; CDecl;
+  SteamAPI_ISteamInput_GetRemotePlaySessionID:              function  (SteamInput: Pointer; inputHandle: TInputHandle ): UInt32; CDecl;
+  SteamAPI_ISteamInput_GetSessionInputConfigurationSettings:function  (SteamInput: Pointer): UInt16; CDecl;
+  SteamAPI_ISteamInput_GetStringForActionOrigin:            function  (SteamInput: Pointer; eOrigin: EInputActionOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetStringForAnalogActionName:        function  (SteamInput: Pointer; eActionHandle: TSteamInputAnalogActionHandle ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetStringForDigitalActionName:       function  (SteamInput: Pointer; eActionHandle: TSteamInputDigitalActionHandle ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_GetStringForXboxOrigin:              function  (SteamInput: Pointer; eOrigin: EXboxOrigin ): PAnsiChar; CDecl;
+  SteamAPI_ISteamInput_Legacy_TriggerHapticPulse:           procedure (SteamInput: Pointer; inputHandle: TInputHandle; eTargetPad: ESteamControllerPad; usDurationMicroSec: UInt16 ); CDecl;
+  SteamAPI_ISteamInput_Legacy_TriggerRepeatedHapticPulse:   procedure (SteamInput: Pointer; inputHandle: TInputHandle; eTargetPad: ESteamControllerPad; usDurationMicroSec: UInt16; usOffMicroSec: UInt16; unRepeat: UInt16; nFlags: CInt ); CDecl;
+  SteamAPI_ISteamInput_RunFrame:                            procedure (SteamInput: Pointer; bReservedValue: LongBool); CDecl;
+  SteamAPI_ISteamInput_SetDualSenseTriggerEffect:           procedure (SteamInput: Pointer; inputHandle: TInputHandle; const pParam: PScePadTriggerEffectParam ); CDecl;
+  SteamAPI_ISteamInput_SetInputActionManifestFilePath:      function  (SteamInput: Pointer; pchInputActionManifestAbsolutePath: PAnsiChar ): LongBool; CDecl;
+  SteamAPI_ISteamInput_SetLEDColor:                         procedure (SteamInput: Pointer; inputHandle: TInputHandle; nColorR: UInt8; nColorG: UInt8; nColorB: UInt8; nFlags: UInt32 ); CDecl;
+  SteamAPI_ISteamInput_ShowBindingPanel:                    function  (SteamInput: Pointer; inputHandle: TInputHandle ): LongBool; CDecl;
+  SteamAPI_ISteamInput_StopAnalogActionMomentum:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; eAction: TSteamInputAnalogActionHandle ); CDecl;
+  SteamAPI_ISteamInput_TranslateActionOrigin:               function  (SteamInput: Pointer; eDestinationInputType: ESteamInputType; eSourceOrigin: EInputActionOrigin ): EInputActionOrigin; CDecl;
+  SteamAPI_ISteamInput_TriggerSimpleHapticEvent:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; eHapticLocation: EControllerHapticLocation; nIntensity: UInt8; nGainDB: Char; nOtherIntensity: UInt8; nOtherGainDB: Char ); CDecl;
+  SteamAPI_ISteamInput_TriggerVibration:                    procedure (SteamInput: Pointer; inputHandle: TInputHandle; usLeftSpeed: UInt16; usRightSpeed: UInt16 ); CDecl;
+  SteamAPI_ISteamInput_TriggerVibrationExtended:            procedure (SteamInput: Pointer; inputHandle: TInputHandle; usLeftSpeed: UInt16; usRightSpeed: UInt16; usLeftTriggerSpeed: UInt16; usRightTriggerSpeed: UInt16 ); CDecl;
 
 
   // ISteamUtils

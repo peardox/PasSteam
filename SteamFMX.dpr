@@ -23,7 +23,9 @@ uses
   steamfriends in 'steam\subsystems\steamfriends.pas',
   steaminput in 'steam\subsystems\steaminput.pas',
   SteamSubsystem in 'steam\subsystems\SteamSubsystem.pas',
-  steamapps in 'steam\subsystems\steamapps.pas';
+  steamapps in 'steam\subsystems\steamapps.pas',
+  steamuser in 'steam\subsystems\steamuser.pas',
+  steamuserstats in 'steam\subsystems\steamuserstats.pas';
 
 {$R *.res}
 

@@ -18,30 +18,32 @@
   for usage. }
 unit steaminput;
 
-// {$I castleconf.inc}
-
 interface
 
 uses Classes, CTypes, SysUtils, SteamTypes, SteamSubsystem;
 
 type
+
   TSteamInput = class(TSteamSubsystem)
   strict private
     FEnabled: Boolean;
     FDeviceCallbacks: Boolean;
+    FEventCallbacks: Boolean;
     FCtrl: Array[0..STEAM_INPUT_MAX_COUNT-1] of TInputHandle;
     procedure SetEnabled(const AValue: Boolean);
   private
+    function CallbackHandler(const C: TCallbackMsg): Boolean;
     procedure RunFrame;
     function GetSteamInputHandle(AValue: Integer): TInputHandle;
     procedure SetDeviceCallbacks(AValue: Boolean);
-    function CallbackHandler(const C: TCallbackMsg): Boolean;
+    procedure SetEventCallbacks(AValue: Boolean);
     procedure CallbackSteamInputConfigurationLoaded(P: PSteamInputConfigurationLoaded);
     procedure CallbackSteamInputDeviceConnected(P: PSteamInputDeviceConnected);
     procedure CallbackSteamInputGamepadSlotChange(
       P: PSteamInputGamepadSlotChange);
     procedure CallbackSteamInputDeviceDisconnected(
       P: PSteamInputDeviceDisconnected);
+    procedure ActionCallback(P: PSteamInputActionEvent);
   public
     constructor Create(SteamClient: Pointer; SteamUserHandle: Int32; SteamPipeHandle: Int32); override;
     destructor Destroy; override;
@@ -51,6 +53,7 @@ type
     property Enabled: Boolean read FEnabled write SetEnabled;
     property InputHandle[Index: Integer]: TInputHandle read GetSteamInputHandle;
     property DeviceCallbacks: Boolean read FDeviceCallbacks write SetDeviceCallbacks;
+    property EventCallbacks: Boolean read FEventCallbacks write SetEventCallbacks;
   end;
 
 implementation
@@ -67,7 +70,6 @@ begin
   FAPIHandle := SteamAPI_ISteamClient_GetISteamInput(
        SteamClient, SteamUserHandle, SteamPipeHandle, STEAMINPUT_INTERFACE_VERSION);
   VerifyLoad(FAPIHandle, Self.ClassName);
-
 end;
 
 destructor TSteamInput.Destroy;
@@ -91,8 +93,6 @@ begin
           if BRes then
             begin
               FOnCallback := CallbackHandler;
-//              SteamAPI_ISteamInput_EnableActionEventCallbacks(FAPIHandle, cbk);
-//              SteamAPI_ISteamInput_EnableDeviceCallbacks(FAPIHandle);
               WriteLnLog('=============> Input Enabled <=============');
             end
           else
@@ -104,6 +104,8 @@ begin
           WriteLnLog('=============> Input Disabled <=============')
         end;
       FEnabled := AValue;
+      DeviceCallbacks := True;
+      EventCallbacks := True;
     end;
 end;
 
@@ -159,10 +161,28 @@ begin
     end;
 end;
 
+{$O-}
+procedure TSteamInput.ActionCallback(P: PSteamInputActionEvent);
+begin
+  WritelnLog('Callbacks - PActionCallback : %d',[SizeOf(TSteamInputActionEvent)])
+end;
+{$O+}
+
+procedure TSteamInput.SetEventCallbacks(AValue: Boolean);
+begin
+  if not FEnabled then
+    Exit;
+  if AValue then
+    begin
+      SteamAPI_ISteamInput_EnableActionEventCallbacks(FAPIHandle, ActionCallback);
+      FEventCallbacks := True;
+    end;
+end;
+
 function TSteamInput.CallbackHandler(const C: TCallbackMsg): Boolean;
 begin
   Result := True;
-//  RunFrame;
+  RunFrame;
   case C.m_iCallback of
     TSteamInputDeviceConnected.k_iCallback:
       begin
@@ -200,8 +220,11 @@ end;
 { Callback ID 2801 }
 procedure TSteamInput.CallbackSteamInputDeviceConnected(
   P: PSteamInputDeviceConnected);
+var
+  InType: ESteamInputType;
 begin
-  writelnlog('>>> SteamInputDeviceConnected : InputHandle = %d',[P{$ifdef fpc}^{$endif}.m_ulConnectedDeviceHandle]);
+  InType := SteamAPI_ISteamInput_GetInputTypeForHandle(FAPIHandle, P{$ifdef fpc}^{$endif}.m_ulConnectedDeviceHandle);
+  WritelnLog('>>> SteamInputDeviceConnected : InputHandle = %d, Type = %d', [P{$ifdef fpc}^{$endif}.m_ulConnectedDeviceHandle, Cardinal(InType)]);
 end;
 
 { Callback ID 2802 }

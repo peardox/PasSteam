@@ -88,7 +88,34 @@ const
 type
   ISteamInput = record Ptr: Pointer; end;
   // Input Types
+  ESteamInputActionEventType = (
+    ESteamInputActionEventType_DigitalAction,
+    ESteamInputActionEventType_AnalogAction
+    );
+
+  EInputSourceMode = (
+    k_EInputSourceMode_None,
+    k_EInputSourceMode_Dpad,
+    k_EInputSourceMode_Buttons,
+    k_EInputSourceMode_FourButtons,
+    k_EInputSourceMode_AbsoluteMouse,
+    k_EInputSourceMode_RelativeMouse,
+    k_EInputSourceMode_JoystickMove,
+    k_EInputSourceMode_JoystickMouse,
+    k_EInputSourceMode_JoystickCamera,
+    k_EInputSourceMode_ScrollWheel,
+    k_EInputSourceMode_Trigger,
+    k_EInputSourceMode_TouchMenu,
+    k_EInputSourceMode_MouseJoystick,
+    k_EInputSourceMode_MouseRegion,
+    k_EInputSourceMode_RadialMenu,
+    k_EInputSourceMode_SingleButton,
+    k_EInputSourceMode_Switches
+  );
+
   TSteamInputActionSetHandle = UInt64;
+  TInputAnalogActionHandle = UInt64;
+  TInputDigitalActionHandle = UInt64;
   PSteamInputActionSetHandle = ^TSteamInputActionSetHandle;
   { These handles are used to refer to a specific in-game action or action set
     All action handles should be queried during initialization for performance reasons }
@@ -101,26 +128,61 @@ type
   TInputHandle = UInt64;
   PSteamInputHandle = ^TInputHandle;
   {	This handle will consistently identify a controller, even if it is disconnected and re-connected }
-  TSteamInputActionEventCallbackPointer = UInt64; // WRONG ???
-  PSteamInputActionEventCallbackPointer = ^TSteamInputActionEventCallbackPointer;
+
+  TInputAnalogActionData = record
+    // Type of data coming from this action, this will match what got specified in the action set
+	  eMode: EInputSourceMode;
+    // The current state of this action; will be delta updates for mouse actions
+     x, y: Single;
+    // Whether or not this action is currently available to be bound in the active action set
+    bActive: LongBool;
+  end;
+
+  TInputDigitalActionData = record
+    // The current state of this action; will be true if currently pressed
+    bState: LongBool;
+    // Whether or not this action is currently available to be bound in the active action set
+    bActive: LongBool;
+  end;
+
+  TAnalogAction = record
+    actionHandle: TInputAnalogActionHandle;
+    analogActionData: TInputAnalogActionData;
+  end;
+
+  TDigitalAction = record
+		actionHandle: TInputDigitalActionHandle;
+		digitalActionData: TInputDigitalActionData;
+  end;
+
+  TSteamInputActionEvent = record
+    controllerHandle: TInputHandle;
+    eEventType: ESteamInputActionEventType;
+    case Integer of
+      0: (analogAction: TAnalogAction);
+      1: (digitalAction: TDigitalAction);
+  end;
+  PSteamInputActionEvent = ^TSteamInputActionEvent;
+
+  TActionCallback = Procedure(P: PSteamInputActionEvent) of object;
 
   ESteamInputType = (
-    k_ESteamInputType_Unknown,
-    k_ESteamInputType_SteamController,
-    k_ESteamInputType_XBox360Controller,
-    k_ESteamInputType_XBoxOneController,
-    k_ESteamInputType_GenericGamepad,		// DirectInput controllers
-    k_ESteamInputType_PS4Controller,
-    k_ESteamInputType_AppleMFiController,	// Unused
-    k_ESteamInputType_AndroidController,	// Unused
-    k_ESteamInputType_SwitchJoyConPair,		// Unused
-    k_ESteamInputType_SwitchJoyConSingle,	// Unused
-    k_ESteamInputType_SwitchProController,
-    k_ESteamInputType_MobileTouch,			// Steam Link App On-screen Virtual Controller
-    k_ESteamInputType_PS3Controller,		// Currently uses PS4 Origins
-    k_ESteamInputType_PS5Controller,		// Added in SDK 151
-    k_ESteamInputType_SteamDeckController,	// Added in SDK 153
-    k_ESteamInputType_Count,
+    k_ESteamInputType_Unknown,              //  0
+    k_ESteamInputType_SteamController,      //  1
+    k_ESteamInputType_XBox360Controller,    //  2
+    k_ESteamInputType_XBoxOneController,    //  3
+    k_ESteamInputType_GenericGamepad,		    //  4 = DirectInput controllers
+    k_ESteamInputType_PS4Controller,        //  5
+    k_ESteamInputType_AppleMFiController,	  //  6 = Unused
+    k_ESteamInputType_AndroidController,	  //  7 = Unused
+    k_ESteamInputType_SwitchJoyConPair,		  //  8 = Unused
+    k_ESteamInputType_SwitchJoyConSingle,	  //  9 = Unused
+    k_ESteamInputType_SwitchProController,  // 10
+    k_ESteamInputType_MobileTouch,			    // 11 = Steam Link App On-screen Virtual Controller
+    k_ESteamInputType_PS3Controller,		    // 12 = Currently uses PS4 Origins
+    k_ESteamInputType_PS5Controller,		    // 13 = Added in SDK 151
+    k_ESteamInputType_SteamDeckController,  // 14 = Added in SDK 153
+    k_ESteamInputType_Count,                // 15
     k_ESteamInputType_MaximumPossibleValue = 255
   );
 
