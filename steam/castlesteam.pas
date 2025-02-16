@@ -22,134 +22,19 @@ unit CastleSteam;
 
 interface
 
-{$define CASTLE_DEBUG_STEAM_API_TESTING}
-
-uses Classes, CTypes, SysUtils,
-  {$ifndef fpc}System.Generics.Collections,{$else}Contnrs,Generics.Collections,{$endif}
+uses Classes,
+  CastleInternalSteamApi,
   SteamTypes,
   SteamSubSystem,
   SteamApps,
-  SteamInput,
   SteamFriends,
+  SteamInput,
   SteamUser,
-  SteamUtils,
-  CastleInternalSteamApi;
+  SteamUserStats,
+  SteamUtils;
 
 type
   TAppId = SteamTypes.TAppId;
-  TAchievementChanged = (AchievedChanged, IconChanged, ImageChanged);
-  TSteamAchievement = Class;
-
-  TAchievementUpdatedEvent = procedure(AValue: TSteamAchievement; const WhatChanged: TAchievementChanged) of object;
-
-  TCastleSteam = class;
-  // Forward declaration for TSteamAchievement.Create
-
-  { TSteamAchievement encapulates a Steam Achievement
-
-    The only value Steam REALLY cares about is the Achievement Key ID (FKey)
-
-    Steam does, however, allow the retrieval of a lot of other Achievement-related
-    fields that may be useful to some developer
-
-    The only thing you can really do with an Achievement is set or clear it
-    nence only the Achieved property is writable
-  }
-
-  TSteamAchievement = Class
-    strict private
-      FOwner: TObject;
-      FAchId: UInt32;
-      FKey: String;
-      FName: String;
-      FDesc: String;
-      FHidden: Boolean;
-      FAchieved: Boolean;
-      FDoneDate: TDateTime;
-      FIcon: CInt;
-      FOnAchievementUpdated: TAchievementUpdatedEvent;
-      procedure SetAchieved(const AChecked: Boolean);
-    protected
-      function GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
-      { Makes a bunch of Steam API calls to fill in all the properties }
-      procedure Populate(SteamUserStats: Pointer; AchievementId: UInt32);
-    public
-      constructor Create(AOwner: TCastleSteam);
-      destructor Destroy; override;
-      { Read-Only : The Achievement API Key - Really important to steam }
-      property Key: String read FKey;
-      { Read-Only : The Achievement Name }
-      property Name: String read FName;
-      { Read-Only : The Achievement Description }
-      property Desc: String read FDesc;
-      { Read-Only : If the achievemnt is hidden from the user or not }
-      property Hidden: Boolean read FHidden;
-      { This will set or clear the achievment status which will also
-        trigger a Steam API that may send a Steaam Notification to
-        the user that the Achievement has been completed (a little
-        notification window pops-up in game if permitted)
-      }
-      property Achieved: Boolean read FAchieved write SetAchieved;
-      { Read-Only : When the Achievement was completed }
-      property DoneDate: TDateTime read FDoneDate;
-      { Read-Only : Achievement Icon handle, used to fetch the actual image.
-        This may trigger an asynchronous fetch if the actual bitmap isn't
-        available (which we catch and handle to for you)
-      }
-      property Icon: CInt read FIcon write FIcon;
-      property OnAchievementUpdated: TAchievementUpdatedEvent
-        read FOnAchievementUpdated write FOnAchievementUpdated;
-
-  end;
-
-  { TIndexedAchievementList is a replacement for the previous TStringList version
-
-    This is enabled by a Generic class (TIndexedObjectList) that mixes
-    a TObjectList with a TObjectDictionary
-
-    The TObjectlist (FList) owns all the TSteamAchievement objects and
-    the TObjectDictionary (FDict) owns nothing but references the Achievements
-    by their Api Key ID (FKey)
-
-    The overhead is minimal as there's only one set of TSteamAchievement Objects
-
-    The benefit is that the Achievements can be iterated over in a loop or
-    directly accessed by their Key via FindKey which is the way that Steam
-    refers to the Achievements in any API calls
-
-    Strictly speaking this object is for convenience only as the Steam API
-    really expects you to already know all the Key IDs anyway
-  }
-
-  TIndexedObjectList<V: class> = class
-  strict private
-    FList: {$ifdef fpc}specialize{$endif} TObjectList<V>;
-    FDict: {$ifdef fpc}specialize{$endif} TObjectDictionary<String, V>;
-    FCapacity: NativeInt;
-    function GetObject(Index: Integer): V;
-    procedure SetObject(Index: Integer; AValue: V);
-    function GetObjectCount: NativeInt;
-    procedure SetCapacity(const AValue: NativeInt);
-  public
-    { Creates the list then dict }
-    constructor Create;
-    { Destroys the dict then the list }
-    destructor Destroy; override;
-    { Add a new TObj to both the list and dict }
-    function Add(const AKey: String; const Value: V): NativeInt;
-    { Returns the TObj for a specified API Key or Nil of it doesn't exist}
-    function FindKey(const AKey: String): V;
-    { Clear dict then list }
-    procedure Clear;
-    { Set the Capacity of list and dict }
-    property Capacity: NativeInt read FCapacity write SetCapacity;
-    { Returns number of items in list/dict }
-    property Count: NativeInt read GetObjectCount;
-    { Get or Set TObj by numerical index. Default property }
-    property Objects[Index: Integer]: V read GetObject write SetObject; default;
-  end;
-
-  TSteamAchievementList = TIndexedObjectList<TSteamAchievement>;
 
   { Integration with Steam.
     See @url(https://castle-engine.io/steam Steam and Castle Game Engine documentation)
@@ -162,21 +47,20 @@ type
   strict private
     FAppId: TAppId;
     FEnabled: Boolean;
-    FUserID: CUserID;
+    FAchievements: TStrings;
+    FUserStatsReceived: Boolean;
+    FOnUserStatsReceived: TNotifyEvent;
     FSteamApps: TSteamApps;
     FSteamFriends: TSteamFriends;
     FSteamInput: TSteamInput;
     FSteamUser: TSteamUser;
+    FSteamUserStats: TSteamUserStats;
     FSteamUtils: TSteamUtils;
-    FAchievements: TSteamAchievementList;
-    FUserStatsReceived: Boolean;
-    FOnUserStatsReceived: TNotifyEvent;
     StoreStats: Boolean;
-    // Pointers for ISteam....
-    SteamUserStats: Pointer;
-    procedure CallbackUserStatsReceived(P: PUserStatsReceived);
-    procedure CallbackUserAchievementIconFetched(P: PUserAchievementIconFetched);
-    procedure GetAchievements;
+    SteamClient: Pointer;
+    //SteamUser: Pointer; // We aren't using it right now, but it works
+    SteamUserHandle: HSteamUser;
+    SteamPipeHandle: HSteamPipe;
     { Makes a warning.
 
       For now if some operation failed, we log an error using @link(WriteLnWarning).
@@ -190,15 +74,7 @@ type
       According to SteamWorks documentation you should run this
       at least 10 times a second, better if every frame. }
     procedure Update(Sender: TObject);
-    { Callback may be set after event is available so trigger it if ready
-      As of 1.61 Stats are no longer async so this callback would not happen
-      without this setter }
-    procedure SetOnUserStatsReceived(const AValue: TNotifyEvent);
-    function SteamVerifyLoad(P: Pointer; const S: String): Boolean;
-  protected
-    SteamClient: Pointer;
-    SteamUserHandle: HSteamUser;
-    SteamPipeHandle: HSteamPipe;
+    procedure SetOnUserStatsReceived(const AnEvent: TNotifyEvent);
   public
     { Connect to Steam and initialize everything.
 
@@ -224,12 +100,6 @@ type
     constructor Create(const AAppId: TAppId);
     destructor Destroy; override;
 
-    property Apps: TSteamApps read FSteamApps;
-    property Friends: TSteamFriends read FSteamFriends;
-    property Input: TSteamInput read FSteamInput;
-    property User: TSteamUser read FSteamUser;
-    property Utils: TSteamUtils read FSteamUtils;
-
     { Steam application id, given when creating this. }
     property AppId: TAppId read FAppId;
 
@@ -243,23 +113,17 @@ type
       It means that all features of this class work as they should. }
     property Enabled: Boolean read FEnabled;
 
-    // Public Interface Access
-    property ISteamUserStats: Pointer read SteamUserStats;
-
     { Achievement names for this game (read-only).
       These are IDs of achievements, can be used in other calls
       like @link(SetAchievement) or @link(GetAchievement).
       This field is initialized when @link(UserStatsReceived) becomes @true,
       it is @nil before. }
-    property Achievements: TSteamAchievementList read FAchievements;
+    property Achievements: TStrings read FAchievements;
 
     { Have we received user stats from Steam.
       Before this is @true, methods of this class dealing with user stats
       (like achievements) don't do anything. }
     property UserStatsReceived: Boolean read FUserStatsReceived;
-
-    { The currently logged in Steam User's ID }
-    property UserId: CUserID read FUserId;
 
     { We have received user stats from Steam.
       Right before calling this event, @link(UserStatsReceived) changed to @true
@@ -299,11 +163,43 @@ type
       You still have to call @link(SetAchievement) to make it achieved. }
     procedure IndicateAchievementProgress(const AchievementId: String;
       const CurrentProgress, MaxProgress: UInt32);
+
+    { 2 digit ISO 3166-1-alpha-2 format country code this client
+      is running in (as looked up via an IP-to-location database) e.g "US" or "UK". }
+    function Country: String;
+
+    { Is the Steam overlay running and the user can access it.
+      The overlay process could take a few seconds to
+      start & hook the game process, so this function will initially return false
+      while the overlay is loading. }
+    function OverlayEnabled: Boolean;
+
+    { Is Steam running in VR mode. }
+    function RunningInVR: Boolean;
+
+    { Is currently running on the Steam Deck device. }
+    function RunningOnSteamDeck: Boolean;
+
+    { Build id of this app. }
+    function BuildId: Integer;
+
+    { Checks if the user owns the DLC and if the DLC is installed. }
+    function DlcInstalled(const DlcAppID: TAppId): Boolean;
+
+    { Current game language. }
+    function Language: String;
+
+    property Apps: TSteamApps read FSteamApps;
+    property Friends: TSteamFriends read FSteamFriends;
+    property Input: TSteamInput read FSteamInput;
+    property User: TSteamUser read FSteamUser;
+    property UserStats: TSteamUserStats read FSteamUserStats;
+    property Utils: TSteamUtils read FSteamUtils;
   end;
 
 implementation
 
-uses DateUtils,
+uses SysUtils, CTypes,
   CastleLog, CastleUtils, CastleApplicationProperties;
 
 procedure WarningHook(nSeverity: Integer; pchDebugText: PAnsiChar); Cdecl;
@@ -325,16 +221,11 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
   var
     InitMsg: Array[0..1023] of Char;
   begin
-    //SetLength(InitMsg, 1024);
     FEnabled := false;
+
     { Is Steam library available at runtime. }
     if SteamLibrary <> nil then
     begin
-     {$if STEAM_API_VERSION >= 1.61}
-     WriteLnLog('SteamAPI using new');
-     {$elseif STEAM_API_VERSION < 1.61}
-     WriteLnLog('SteamAPI using old');
-     {$endif}
       // Initialize Steam API
       {$if STEAM_API_VERSION >= 1.61}
       if SteamAPI_InitFlat(@InitMsg) = k_ESteamAPIInitResult_OK then
@@ -342,12 +233,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
       if SteamAPI_Init() then
       {$endif}
       begin
-        {$if STEAM_API_VERSION = 1.61}
-        WriteLnLog('SteamAPI with USE_TESTING_API using ' + SteamLibraryName);
-        {$else}
-        WriteLnLog('SteamAPI using ' + SteamLibraryName);
-        {$endif}
-        WriteLnLog('SteamAPI_Init successful');
+        WriteLnLog('SteamAPI_Init successfull');
 
         // If the app was started through EXE - restart the game through Steam
         if SteamAPI_RestartAppIfNecessary(AppId) then
@@ -360,7 +246,7 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
           WriteLnLog('The app was started through Steam (or runs in developer mode with steam_appid.txt), Steam integration enabled OK.');
         end;
       end else
-        WriteLnWarning(String(PAnsiChar(@InitMsg)) + SLineBreak + 'SteamAPI_Init failed. This means Steam does not run in the background, but you run the application in development mode (with steam_appid.txt). In this case Steam integration will not work. See https://castle-engine.io/steam for information how to test the Steam integration.');
+        WriteLnWarning('SteamAPI_Init failed. This means Steam does not run in the background, but you run the application in development mode (with steam_appid.txt). In this case Steam integration will not work. See https://castle-engine.io/steam for information how to test the Steam integration.');
     end else
     begin
       {$warnings off} // ignore FPC warnings about unreachable code, since SteamLibraryName is constant
@@ -385,41 +271,29 @@ constructor TCastleSteam.Create(const AAppId: TAppId);
     SteamUserHandle := SteamAPI_GetHSteamUser();
     SteamPipeHandle := SteamAPI_GetHSteamPipe();
 
-    // Init SteamUser
-    FSteamUser := TSteamUser.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
-    {
-    SteamUser := SteamAPI_ISteamClient_GetISteamUser(
-       SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSER_INTERFACE_VERSION);
-    SteamVerifyLoad(SteamUser, 'SteamUser');
-    }
     // Init SteamApps
     FSteamApps := TSteamApps.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
-
-    // Init SteamFriends
-    FSteamFriends := TSteamFriends.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
-
-    // Init SteamUtils
-    FSteamUtils := TSteamUtils.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
     // Init SteamInput
     FSteamInput := TSteamInput.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
-    // Init SteamUserStats and request UserStats (will wait for callback, handled in Update)
-    SteamUserStats := SteamAPI_ISteamClient_GetISteamUserStats(
-      SteamClient, SteamUserHandle, SteamPipeHandle, STEAMUSERSTATS_INTERFACE_VERSION);
-    SteamVerifyLoad(SteamUserStats, 'SteamUserStats');
+    // Init SteamUser
+    FSteamUser := TSteamUser.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
 
-    FUserId := User.SteamID;
+    // Init SteamUser
+    FSteamUserStats := TSteamUserStats.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
+
+    // Init SteamUtils
+    FSteamUtils := TSteamUtils.Create(SteamClient, SteamUserHandle, SteamPipeHandle);
+
     {$if STEAM_API_VERSION < 1.61}
-    SteamAPI_ISteamUserStats_RequestCurrentStats(SteamUserStats);
+    FSteamUserStats.RequestCurrentStats;
     {$else}
     if SteamUserStats <> Nil then
       begin
-        GetAchievements;
-        FUserStatsReceived := true;
-        if Assigned(OnUserStatsReceived) then
-          OnUserStatsReceived(Self);
-      end;
+        FSteamUserStats.GetAchievements;
+        FAchievements := FSteamUserStats.Achievements;
+     end;
     {$endif}
 
     SteamAPI_ManualDispatch_Init();
@@ -434,12 +308,9 @@ begin
 
   InitializeSteamLibrary;
   CheckEnabledAndRestart;
-  if FEnabled then
-    begin
-      InitialSteamCalls;
-      ApplicationProperties.OnUpdate.Add({$ifdef FPC}@{$endif} Update);
-    end;
+  InitialSteamCalls;
 
+  ApplicationProperties.OnUpdate.Add({$ifdef FPC}@{$endif} Update);
 end;
 
 destructor TCastleSteam.Destroy;
@@ -455,6 +326,8 @@ begin
         FreeAndNil(FSteamInput);
       if Assigned(FSteamUser) then
         FreeAndNil(FSteamUser);
+      if Assigned(FSteamUserStats) then
+        FreeAndNil(FSteamUserStats);
       if Assigned(FSteamUtils) then
         FreeAndNil(FSteamUtils);
       SteamAPI_ISteamClient_BReleaseSteamPipe(SteamClient, SteamPipeHandle);
@@ -465,83 +338,9 @@ begin
   inherited;
 end;
 
-procedure TCastleSteam.CallbackUserAchievementIconFetched(
-  P: PUserAchievementIconFetched);
-var
-  S: String;
-  Found: TSteamAchievement;
-begin
-  if P{$ifdef fpc}^{$endif}.m_nIconHandle = 0 then
-    begin
-      {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-      WriteLnLog('Steam', 'No Icon Available');
-      {$endif}
-      Exit;
-    end;
-
-  S := String(P{$ifdef fpc}^{$endif}.m_rgchAchievementName);
-  if Length(S) > 0 then
-    begin
-      Found := FAchievements.FindKey(S);
-      if Found <> Nil then
-
-        begin
-          {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-          WriteLnLog('Image ==>', 'Fetched UserAchievementIcon from Steam for %s with Handle %d',
-          [S, (P^).m_nIconHandle]);
-          {$endif}
-          Found.Icon := P{$ifdef fpc}^{$endif}.m_nIconHandle;
-          if Assigned(Found.OnAchievementUpdated) then
-            Found.OnAchievementUpdated(Found, ImageChanged);
-        end;
-
-    end;
-end;
-
-procedure TCastleSteam.CallbackUserStatsReceived(P: PUserStatsReceived);
-begin
-  WriteLnLog('Steam', 'Received UserStats from Steam');
-  FUserStatsReceived := true;
-  GetAchievements;
-  if Assigned(OnUserStatsReceived) then
-    OnUserStatsReceived(Self);
-end;
-
-procedure TCastleSteam.GetAchievements;
-var
-  NumAchievements: UInt32;
-  I: Integer;
-  SteamAchievement: TSteamAchievement;
-begin
-  if not Enabled then
-    Exit;
-
-  FAchievements := TSteamAchievementList.Create;
-
-  NumAchievements := SteamAPI_ISteamUserStats_GetNumAchievements(SteamUserStats);
-  if NumAchievements > 0 then
-    for I := 0 to NumAchievements - 1 do
-      begin
-        SteamAchievement := TSteamAchievement.Create(Self);
-        SteamAchievement.Populate(SteamUserStats, I);
-        FAchievements.Add(SteamAchievement.Key, SteamAchievement);
-      end;
-  WriteLnLog('Steam Achievements: %d', [Achievements.Count]);
-end;
-
 procedure TCastleSteam.SteamError(const ErrorMsg: String);
 begin
   WriteLnWarning(ErrorMsg);
-end;
-
-function TCastleSteam.SteamVerifyLoad(P: Pointer; const S: String): Boolean;
-begin
-  Result := True;
-  if P = Nil then
-    begin
-      SteamError(Format('Failed to load %s', [S]));
-      Result := False;
-    end;
 end;
 
 const
@@ -555,24 +354,22 @@ begin
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AnsiString(AchievementId);
-    if not SteamAPI_ISteamUserStats_SetAchievement(SteamUserStats, PAnsiChar(AchievementIdAnsi)) then
+    AchievementIdAnsi := AchievementId;
+    if not FSteamUserStats.SetAchievement(PAnsiChar(AchievementIdAnsi)) then
       SteamError('Failed to SteamAPI_ISteamUserStats_SetAchievement');
     StoreStats := true;
   end else
     SteamError('SetAchievement failed. ' + SUserStatsNotReceived);
 end;
 
-procedure TCastleSteam.SetOnUserStatsReceived(const AValue: TNotifyEvent);
+procedure TCastleSteam.SetOnUserStatsReceived(const AnEvent: TNotifyEvent);
 begin
-  FOnUserStatsReceived := AValue;
-  if Assigned(FOnUserStatsReceived) and FUserStatsReceived then
-    FOnUserStatsReceived(Self);
+   FSteamUserStats.OnUserStatsReceived := AnEvent;
 end;
 
 function TCastleSteam.GetAchievement(const AchievementId: String): Boolean;
 var
-  CAchieved: TSteamBool;
+  CAchieved: LongBool;
   AchievementIdAnsi: AnsiString;
 begin
   Result := false;
@@ -580,9 +377,8 @@ begin
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AnsiString(AchievementId);
-    if SteamAPI_ISteamUserStats_GetAchievement(SteamUserStats,
-        PAnsiChar(AchievementIdAnsi), @CAchieved) then
+    AchievementIdAnsi := AchievementId;
+    if FSteamUserStats.GetAchievement(AchievementIdAnsi, CAchieved) then
     begin
       Result := CAchieved;
     end else
@@ -592,15 +388,12 @@ begin
 end;
 
 procedure TCastleSteam.ClearAchievement(const AchievementId: String);
-var
-  AchievementIdAnsi: AnsiString;
 begin
   if not Enabled then
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AnsiString(AchievementId);
-    if not SteamAPI_ISteamUserStats_ClearAchievement(SteamUserStats, PAnsiChar(AchievementIdAnsi)) then
+    if not FSteamUserStats.ClearAchievement(AchievementId) then
       SteamError('Failed to SteamAPI_ISteamUserStats_ClearAchievement');
     StoreStats := true;
   end else
@@ -608,13 +401,17 @@ begin
 end;
 
 procedure TCastleSteam.ClearAllAchievements;
+var
+  S: String;
 begin
-
   if not Enabled then
     Exit;
   if UserStatsReceived then
-    FAchievements.Clear;
-
+  begin
+    for S in Achievements do
+      ClearAchievement(S)
+  end else
+    SteamError('ClearAllAchievements failed. ' + SUserStatsNotReceived);
 end;
 
 procedure TCastleSteam.IndicateAchievementProgress(const AchievementId: String;
@@ -626,8 +423,8 @@ begin
     Exit;
   if UserStatsReceived then
   begin
-    AchievementIdAnsi := AnsiString(AchievementId);
-    if not SteamAPI_ISteamUserStats_IndicateAchievementProgress(SteamUserStats,
+    AchievementIdAnsi := AchievementId;
+    if not FSteamUserStats.IndicateAchievementProgress(
        PAnsiChar(AchievementIdAnsi), CurrentProgress, MaxProgress) then
       SteamError('Failed to SteamAPI_ISteamUserStats_IndicateAchievementProgress');
     StoreStats := true; // not really necessary it seems
@@ -654,7 +451,7 @@ procedure TCastleSteam.Update(Sender: TObject);
   }
   procedure SteamRunCallbacks;
   { Extra logging of unhandled Steam callbacks (it's normal that we have some). }
-  {$define CASTLE_DEBUG_STEAM_CALLBACKS}
+  {.$define CASTLE_DEBUG_STEAM_CALLBACKS}
   var
     Callback: TCallbackMsg;
     PCallCompleted: PSteamAPICallCompleted;
@@ -662,31 +459,29 @@ procedure TCastleSteam.Update(Sender: TObject);
     BFailed: TSteamBool;
     CallbackHandled: Boolean;
   begin
-//    if Assigned(FSteamInput) and FSteamInput.Enabled then
-//      FSteamInput.RunFrame();
     SteamAPI_ManualDispatch_RunFrame(SteamPipeHandle);
     while SteamAPI_ManualDispatch_GetNextCallback(SteamPipeHandle, @Callback) do
     begin
-      // Look at callback.m_iCallback to see what kind of callback it is,
-      // and dispatch to appropriate handler(s)
-//      WritelnWarning('Steam', 'Got Callback : ' + IntToStr(Callback.m_iCallback));
       CallbackHandled := False;
-      if Not(CallbackHandled) and Assigned(FSteamInput) then
+      { TODO - This bunch of RunCallbacks will need more elegant handling
+        but is good enough for testing
+      }
+      if Assigned(FSteamInput) and Not(CallbackHandled) then
         CallbackHandled := FSteamInput.RunCallback(Callback);
-      if Not(CallbackHandled) and Assigned(FSteamApps) then
+      if Assigned(FSteamApps) and Not(CallbackHandled) then
         CallbackHandled := FSteamApps.RunCallback(Callback);
-      if Not(CallbackHandled) and Assigned(FSteamFriends) then
+      if Assigned(FSteamFriends) and Not(CallbackHandled) then
         CallbackHandled := FSteamFriends.RunCallback(Callback);
-      if Not(CallbackHandled) and Assigned(FSteamUtils) then
+      if Assigned(FSteamUtils) and Not(CallbackHandled) then
         CallbackHandled := FSteamUtils.RunCallback(Callback);
-{
-      if Not(CallbackHandled) and Assigned(FSteamUser) then
+      if Assigned(FSteamUser) and Not(CallbackHandled) then
         CallbackHandled := FSteamUser.RunCallback(Callback);
-      if Not(CallbackHandled) and Assigned(FSteamUserStats) then
-        CallbackHandled := FSteamUser.RunCallbackStats(Callback);
-}
-      if CallbackHandled = False then
+      if Assigned(FSteamUserStats) and Not(CallbackHandled) then
+        CallbackHandled := FSteamUserStats.RunCallback(Callback);
+      if Not(CallbackHandled) then
         begin
+          // Look at callback.m_iCallback to see what kind of callback it is,
+          // and dispatch to appropriate handler(s)
           case Callback.m_iCallback of
             TSteamAPICallCompleted.k_iCallback:
               begin
@@ -718,20 +513,6 @@ procedure TCastleSteam.Update(Sender: TObject);
                 end;
                 FreeMem(PTmpCallResult);
               end;
-            TUserStatsReceived.k_iCallback:
-              begin
-                {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
-                WritelnLog('Steam', 'Handle Stats Received (m_iCallback : %d)', [Callback.m_iCallback]);
-                {$endif}
-                CallbackUserStatsReceived(PUserStatsReceived(Callback.m_pubParam));
-              end;
-            TUserAchievementIconFetched.k_iCallback:
-              begin
-                if(SizeOf(TUserAchievementIconFetched) <> Callback.m_cubParam) then
-                  WritelnLog('Callbacks', 'TUserAchievementIconFetched Size = %d, should be %d)', [SizeOf(TUserAchievementIconFetched), Callback.m_cubParam])
-                else
-                  CallbackUserAchievementIconFetched(PUserAchievementIconFetched(Callback.m_pubParam));
-              end;
             else
               begin
                 {$ifdef CASTLE_DEBUG_STEAM_CALLBACKS}
@@ -755,137 +536,57 @@ begin
 
   // If we have unsaved changes, try saving them; if failed - repeat
   if UserStatsReceived and StoreStats then
-    if SteamAPI_ISteamUserStats_StoreStats(SteamUserStats) then // repeat it every Update until success
+    if FSteamUserStats.StoreStats then // repeat it every Update until success
       StoreStats := false;
 end;
 
-{ TSteamAchievement }
-
-constructor TSteamAchievement.Create(AOwner: TCastleSteam);
+function TCastleSteam.Country: String;
 begin
-  Inherited Create;
-  FOwner := AOwner;
+  if not Enabled then
+    Exit('');
+  Result := FSteamUtils.IPCountry;
 end;
 
-destructor TSteamAchievement.Destroy;
+function TCastleSteam.OverlayEnabled: Boolean;
 begin
-  inherited;
+  if not Enabled then
+    Exit(false);
+  Result := FSteamUtils.IsOverlayEnabled;
 end;
 
-function TSteamAchievement.GetIcon(SteamUserStats: Pointer; AchievementId: UInt32): CInt;
+function TCastleSteam.RunningInVR: Boolean;
 begin
-  Result := SteamAPI_ISteamUserStats_GetAchievementIcon(SteamUserStats, PAnsiChar(AnsiString(FKey)));
-  if Result <> 0 then
-    begin
-      {$if defined(CASTLE_DEBUG_STEAM_API_TESTING)}
-      WritelnLog('GetAchievementIcon returned Icon Handle %d for %s', [Result, FKey]);
-      {$endif}
-    end
-  else
-    WritelnLog('GetAchievementIcon Pending');
+  if not Enabled then
+    Exit(false);
+  Result := FSteamUtils.IsSteamRunningInVR;
 end;
 
-procedure TSteamAchievement.Populate(SteamUserStats: Pointer; AchievementId: UInt32);
-var
-  pchName: PAnsiChar;
-  pchHidden: PAnsiChar;
-  bAchieved: TSteamBool;
-  uDate: UInt32;
+function TCastleSteam.RunningOnSteamDeck: Boolean;
 begin
-  FAchId := AchievementId;
-  pchName := SteamAPI_ISteamUserStats_GetAchievementName(SteamUserStats, AchievementId);
-  FKey := String(pchName);
-  FName := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'name'));
-  FDesc := String(SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'desc'));
-  pchHidden := SteamAPI_ISteamUserStats_GetAchievementDisplayAttribute(SteamUserStats, pchName, 'hidden');
-  if CompareStr(String(pchHidden), '1') = 0 then
-    FHidden := True
-  else
-    FHidden := False;
-  SteamAPI_ISteamUserStats_GetAchievementAndUnlockTime(SteamUserStats, pchName, @bAchieved, @uDate);
-  FAchieved := bAchieved;
-  FDoneDate := UnixToDateTime(uDate);
-  FIcon := GetIcon(SteamUserStats, AchievementId);
-
+  if not Enabled then
+    Exit(false);
+  Result := FSteamUtils.IsRunningOnSteamDeck;
 end;
 
-procedure TSteamAchievement.SetAchieved(const AChecked: Boolean);
-var
-  NIcon: CInt;
+function TCastleSteam.BuildId: Integer;
 begin
-  if not(FOwner is TCastleSteam) then
-    Exit;
-
-  FAchieved := AChecked;
-  if FAchieved then
-    TCastleSteam(FOwner).SetAchievement(FKey)
-  else
-    TCastleSteam(FOwner).ClearAchievement(FKey);
-  NIcon := GetIcon(TCastleSteam(FOwner).ISteamUserStats, FIcon);
-  if (NIcon <> FIcon) then
-    begin
-      FIcon := NIcon;
-      if Assigned(OnAchievementUpdated) then
-        OnAchievementUpdated(Self, IconChanged);
-    end;
+  if not Enabled then
+    Exit(0);
+  Result := FSteamApps.AppBuildId;
 end;
 
-{ TIndexedObjectList<TObj> }
-
-function TIndexedObjectList<V>.Add(
-  const AKey: String; const Value: V): NativeInt;
+function TCastleSteam.DlcInstalled(const DlcAppID: TAppId): Boolean;
 begin
-  Result := FList.Add(Value);
-  FDict.Add(AKey, Value);
+  if not Enabled then
+    Exit(false);
+  Result := FSteamApps.IsDlcInstalled(DlcAppID);
 end;
 
-procedure TIndexedObjectList<V>.Clear;
+function TCastleSteam.Language: String;
 begin
-  FDict.Clear;
-  FList.Clear;
-end;
-
-constructor TIndexedObjectList<V>.Create;
-begin
-  FList := TObjectList<V>.Create;
-  FDict := TObjectDictionary<String, V>.Create();
-end;
-
-destructor TIndexedObjectList<V>.Destroy;
-begin
-  FreeAndNil(FDict);
-  FreeAndNil(FList);
-  inherited;
-end;
-
-function TIndexedObjectList<V>.FindKey(
-  const AKey: String): V;
-begin
-  if not FDict.TryGetValue(AKey, Result) then
-    Result := Nil;
-end;
-
-function TIndexedObjectList<V>.GetObject(Index: Integer): V;
-begin
-  Result := FList[Index];
-end;
-
-function TIndexedObjectList<V>.GetObjectCount: NativeInt;
-begin
-  Result := FList.Count;
-end;
-
-procedure TIndexedObjectList<V>.SetCapacity(const AValue: NativeInt);
-begin
-  FCapacity := AValue;
-  FList.Capacity := FCapacity;
-  FDict.Capacity := FCapacity;
-end;
-
-procedure TIndexedObjectList<V>.SetObject(Index: Integer; AValue: V);
-begin
-  FList[Index] := AValue;
+  if not Enabled then
+    Exit('');
+  Result := FSteamApps.Language;
 end;
 
 end.
-

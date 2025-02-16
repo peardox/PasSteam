@@ -50,7 +50,7 @@ type
   TIconSize = (IconSmall, IconMedium, IconLarge);
 
 const
-  STEAM_API_VERSION = 1.61;
+  STEAM_API_VERSION = 1.57;
   STEAM_INPUT_MAX_COUNT = 16;
 
   { Versions of Steam API interfaces.

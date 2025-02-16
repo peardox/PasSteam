@@ -16,6 +16,7 @@ type
     procedure SetInterval(const AValue: Cardinal);
     procedure AppUpdate(Sender: TObject);
     function GetAvatar: UInt32;
+    function GetUserID: CUserID;
   public
     procedure ConvertSteamImage(const AHandle: UInt32; const ABitmap: TBitmap);
     function SteamBitmapToTBitmap(ABitmap: TSteamBitmap): TBitmap;
@@ -26,6 +27,7 @@ type
     property Interval: Cardinal Read FInterval Write SetInterval;
     property OnAppUpdate: TNotifyEvent read FDoUpdate write FDoUpdate;
     property Avatar: UInt32 read GetAvatar;
+    property UserID: CUserID read GetUserID;
   end;
 
 implementation
@@ -142,6 +144,13 @@ begin
   Result := 0;
   if UserStatsReceived then
      Result := Friends.GetFriendImageHandle(UserId);
+end;
+
+function TSteamApp.GetUserID: CUserID;
+begin
+  Result := 0;
+  if Assigned(User) then
+    Result := User.SteamID;
 end;
 
 procedure TSteamApp.SetInterval(const AValue: Cardinal);

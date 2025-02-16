@@ -32,8 +32,8 @@ type
   public
     constructor Create(SteamClient: Pointer; SteamUserHandle: Int32; SteamPipeHandle: Int32); override;
     destructor Destroy; override;
-    function GetDlcInstalled(const DlcAppID: TAppId): Boolean;
-    property BuildId: Integer read GetAppBuildId;
+    function IsDlcInstalled(const DlcAppID: TAppId): Boolean;
+    property AppBuildId: Integer read GetAppBuildId;
     property Language: String read GetLanguage;
   end;
 
@@ -64,7 +64,7 @@ begin
   Result := SteamAPI_ISteamApps_GetAppBuildId(FAPIHandle);
 end;
 
-function TSteamApps.GetDlcInstalled(const DlcAppID: TAppId): Boolean;
+function TSteamApps.IsDlcInstalled(const DlcAppID: TAppId): Boolean;
 begin
   if not Assigned(FAPIHandle) then
     Raise Exception.CreateFmt('%s : Class not instantiated',[Self.ClassName]);

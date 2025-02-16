@@ -34,19 +34,19 @@ type
     function GetSteamAppID: CInt;
     { 2 digit ISO 3166-1-alpha-2 format country code this client
       is running in (as looked up via an IP-to-location database) e.g "US" or "UK". }
-    function Country: String;
+    function IPCountry: String;
 
     { Is the Steam overlay running and the user can access it.
       The overlay process could take a few seconds to
       start & hook the game process, so this function will initially return false
       while the overlay is loading. }
-    function OverlayEnabled: Boolean;
+    function IsOverlayEnabled: Boolean;
 
     { Is Steam running in VR mode. }
-    function RunningInVR: Boolean;
+    function IsSteamRunningInVR: Boolean;
 
     { Is currently running on the Steam Deck device. }
-    function RunningOnSteamDeck: Boolean;
+    function IsRunningOnSteamDeck: Boolean;
   end;
 
 implementation
@@ -104,22 +104,22 @@ begin
   Result := SteamAPI_ISteamUtils_GetAppID(FAPIHandle);
 end;
 
-function TSteamUtils.Country: String;
+function TSteamUtils.IPCountry: String;
 begin
   Result := String(SteamAPI_ISteamUtils_GetIPCountry(FAPIHandle));
 end;
 
-function TSteamUtils.OverlayEnabled: Boolean;
+function TSteamUtils.IsOverlayEnabled: Boolean;
 begin
   Result := SteamAPI_ISteamUtils_IsOverlayEnabled(FAPIHandle);
 end;
 
-function TSteamUtils.RunningInVR: Boolean;
+function TSteamUtils.IsSteamRunningInVR: Boolean;
 begin
   Result := SteamAPI_ISteamUtils_IsSteamRunningInVR(FAPIHandle);
 end;
 
-function TSteamUtils.RunningOnSteamDeck: Boolean;
+function TSteamUtils.IsRunningOnSteamDeck: Boolean;
 begin
   Result := SteamAPI_ISteamUtils_IsSteamRunningOnSteamDeck(FAPIHandle);
 end;

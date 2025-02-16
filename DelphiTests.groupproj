@@ -15,6 +15,9 @@
         <Projects Include="projects\ApiWriter.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="projects\BasicProject.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="ApiWriter:Make">
         <MSBuild Projects="projects\ApiWriter.dproj" Targets="Make"/>
     </Target>
+    <Target Name="BasicProject">
+        <MSBuild Projects="projects\BasicProject.dproj"/>
+    </Target>
+    <Target Name="BasicProject:Clean">
+        <MSBuild Projects="projects\BasicProject.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="BasicProject:Make">
+        <MSBuild Projects="projects\BasicProject.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="SteamFMX;SteamVCL;FMX3D;ApiWriter"/>
+        <CallTarget Targets="SteamFMX;SteamVCL;FMX3D;ApiWriter;BasicProject"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="SteamFMX:Clean;SteamVCL:Clean;FMX3D:Clean;ApiWriter:Clean"/>
+        <CallTarget Targets="SteamFMX:Clean;SteamVCL:Clean;FMX3D:Clean;ApiWriter:Clean;BasicProject:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="SteamFMX:Make;SteamVCL:Make;FMX3D:Make;ApiWriter:Make"/>
+        <CallTarget Targets="SteamFMX:Make;SteamVCL:Make;FMX3D:Make;ApiWriter:Make;BasicProject:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
